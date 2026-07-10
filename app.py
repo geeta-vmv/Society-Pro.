@@ -12,7 +12,7 @@ from flask import Flask, request, jsonify, g, send_from_directory
 import jwt as pyjwt
 import yaml
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime) (levelname)s %(message)")
 log = logging.getLogger("societypro")
 
 _HERE     = os.path.dirname(os.path.abspath(__file__))
@@ -1740,7 +1740,7 @@ def init_db():
         s=s.strip()
         if s: db.execute(s)
     db.commit(); seed(db); db.close()
-    log.info("✅  DB ready → %s", DB_PATH)
+    log.info("✅  DB ready → %", DB_PATH)
 
 if __name__ == "__main__":
     os.makedirs(STATIC, exist_ok=True)
