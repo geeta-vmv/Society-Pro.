@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>SocietyPro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#3B4FD4;--blue-lt:#EEF0FB;--blue-dk:#2e42c0;
+  --green:#2E7D32;--green-lt:#E8F5E9;
+  --red:#C62828;--red-lt:#FFEBEE;
+  --amber:#E65100;--amber-lt:#FFF3E0;
+  --gray:#546E7A;--border:#E0E0E0;
+  --text:#212121;--text2:#616161;--text3:#9E9E9E;
+  --bg:#F5F5F5;--white:#FFFFFF;
+  --sidebar:220px;--top:52px;
+  --admin-accent:#3B4FD4;
+  --owner-accent:#2E7D32;
+  --tenant-accent:#6A1B9A;
+  --guard-accent:#E65100;
+}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+
+/* Layout */
+#app{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;z-index:50;transition:transform .25s}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#topbar{height:var(--top);background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0}
+#content{flex:1;overflow-y:auto;padding:16px}
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40}
+@media(max-width:768px){
+  #sidebar{position:fixed;top:0;left:0;height:100%;transform:translateX(-100%)}
+  #sidebar.open{transform:none}
+  #overlay.open{display:block}
+  #content{padding:10px}
+}
+
+/* Sidebar */
+.sb-logo{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-box{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;flex-shrink:0}
+.logo-txt{font-size:14px;font-weight:700}
+.sb-soc{margin:10px;padding:9px 12px;background:var(--bg);border-radius:8px;cursor:pointer;border:1px solid var(--border)}
+.sb-soc-name{font-size:12px;font-weight:600;color:var(--text)}
+.sb-soc-sub{font-size:11px;color:var(--text3)}
+.nav-sec{padding:4px 0}
+.nav-lbl{font-size:10px;font-weight:700;color:var(--text3);padding:10px 16px 4px;text-transform:uppercase;letter-spacing:.05em}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 16px;cursor:pointer;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .12s}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--blue-lt);color:var(--blue);border-left-color:var(--blue);font-weight:600}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
+.sb-user{padding:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;cursor:pointer}
+.sb-user:hover{background:var(--bg)}
+.avatar{width:28px;height:28px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-urole{font-size:10px;color:var(--text3)}
+.role-badge{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;margin-top:2px;display:inline-block}
+
+/* Topbar */
+.tb-hamburger{display:none;flex-direction:column;gap:4px;cursor:pointer;padding:6px;border-radius:6px}
+.tb-hamburger:hover{background:var(--bg)}
+.tb-hamburger span{display:block;width:18px;height:2px;background:var(--text2);border-radius:2px}
+@media(max-width:768px){.tb-hamburger{display:flex}}
+.tb-title{font-size:14px;font-weight:700;flex:1}
+#tb-actions{display:flex;gap:6px;flex-wrap:nowrap}
+
+/* Buttons */
+.btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--white);color:var(--text);cursor:pointer;transition:all .12s;font-family:inherit;white-space:nowrap}
+.btn:hover{background:var(--bg)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.primary:hover{background:var(--blue-dk)}
+.btn.sm{padding:5px 10px;font-size:11px}
+.btn.xs{padding:3px 8px;font-size:10px}
+.btn.danger{background:var(--red-lt);color:var(--red);border-color:#ffcdd2}
+.btn.success{background:var(--green-lt);color:var(--green);border-color:#c8e6c9}
+.btn.warning{background:var(--amber-lt);color:var(--amber);border-color:#ffe0b2}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Cards */
+.card{background:var(--white);border-radius:12px;border:1px solid var(--border);padding:16px}
+.card-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.grid-4{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+.stat-card{background:var(--white);border-radius:10px;border:1px solid var(--border);padding:14px;position:relative;overflow:hidden}
+.stat-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.blue::before{background:var(--blue)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.amber::before{background:var(--amber)}
+.stat-lbl{font-size:11px;color:var(--text3);margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:800;line-height:1}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* Table */
+.tbl-wrap{background:var(--white);border-radius:12px;border:1px solid var(--border);overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:400px}
+th{text-align:left;padding:9px 14px;font-size:11px;font-weight:700;color:var(--text3);background:#fafafa;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text);font-size:12px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+
+/* Badges */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.badge.green{background:var(--green-lt);color:var(--green)}
+.badge.red{background:var(--red-lt);color:var(--red)}
+.badge.amber{background:var(--amber-lt);color:var(--amber)}
+.badge.blue{background:var(--blue-lt);color:var(--blue)}
+.badge.purple{background:#F3E5F5;color:#6A1B9A}
+.badge.gray{background:#ECEFF1;color:var(--gray)}
+
+/* Forms */
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;padding:9px 12px;font-size:13px;border:1px solid #ccc;border-radius:8px;background:var(--white);color:var(--text);font-family:inherit;outline:none;transition:border .12s;-webkit-appearance:none;appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,79,212,.1)}
+
+/* Modal */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;padding:16px;overflow-y:auto;align-items:flex-start;justify-content:center}
+#modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:14px;width:100%;max-width:500px;padding:22px;margin:auto}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1;padding:2px}
+
+/* Toast */
+#toast-container{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px;max-width:320px;pointer-events:none}
+@media(max-width:600px){#toast-container{left:12px;right:12px;bottom:12px}}
+.toast{padding:10px 16px;border-radius:10px;font-size:13px;font-weight:500;animation:slide-in .2s;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.toast.success{background:#2E7D32;color:#fff}
+.toast.error{background:#C62828;color:#fff}
+.toast.info{background:var(--blue);color:#fff}
+@keyframes slide-in{from{transform:translateX(50px);opacity:0}to{transform:none;opacity:1}}
+
+/* Auth */
+#auth-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1a237e 0%,#283593 100%);display:flex;align-items:center;justify-content:center;z-index:400;padding:16px}
+.auth-card{background:var(--white);border-radius:20px;padding:28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.auth-logo{width:56px;height:56px;background:var(--blue);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:22px;margin:0 auto 12px}
+.auth-title{font-size:24px;font-weight:800;text-align:center;margin-bottom:2px}
+.auth-sub{font-size:13px;color:var(--text3);text-align:center;margin-bottom:22px}
+.otp-row{display:flex;gap:8px;justify-content:center;margin:12px 0}
+.otp-box{width:44px;height:52px;text-align:center;font-size:22px;font-weight:700;border:1.5px solid #ccc;border-radius:10px;outline:none;font-family:monospace}
+.otp-box:focus{border-color:var(--blue)}
+.dev-box{background:var(--blue-lt);border:1px solid #c5d0f5;border-radius:8px;padding:10px;text-align:center;font-size:13px;color:var(--blue);font-weight:700;margin:10px 0}
+.big-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .12s;margin-top:6px}
+.big-btn:hover{background:var(--blue-dk)}
+.big-btn:disabled{background:#90A4AE}
+
+/* Misc */
+.loading{text-align:center;padding:40px;color:var(--text3)}
+.empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{padding:4px 12px;border-radius:16px;border:1px solid #ccc;background:var(--white);font-size:11px;color:var(--text2);cursor:pointer;font-weight:500}
+.chip:hover,.chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.row{display:flex;gap:8px;align-items:center}
+.spacer{flex:1}
+
+/* Plan system */
+.plan-pro{background:linear-gradient(135deg,#E65100,#F57F17);color:#fff;font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px;letter-spacing:.03em}
+.plan-free{background:#ECEFF1;color:#546E7A;font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px}
+.nav-item .lock{font-size:10px;margin-left:auto;opacity:.5}
+.upgrade-card{background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border:1.5px solid #FFB300;border-radius:14px;padding:28px;text-align:center;max-width:480px;margin:40px auto}
+
+/* SUPER_ADMIN accent */
+body[data-role="SUPER_ADMIN"] .nav-item.active{color:#880E4F;border-left-color:#880E4F;background:#FCE4EC}
+body[data-role="OWNER"] .logo-box{background:var(--owner-accent)}
+body[data-role="TENANT"] .logo-box{background:var(--tenant-accent)}
+body[data-role="GUARD"] .logo-box{background:var(--guard-accent)}
+body[data-role="OWNER"] .nav-item.active{color:var(--owner-accent);border-left-color:var(--owner-accent);background:#E8F5E9}
+body[data-role="TENANT"] .nav-item.active{color:var(--tenant-accent);border-left-color:var(--tenant-accent);background:#F3E5F5}
+body[data-role="GUARD"] .nav-item.active{color:var(--guard-accent);border-left-color:var(--guard-accent);background:#FFF3E0}
+
+/* Payment */
+.plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.plan-card{border:2px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;position:relative;transition:all .15s}
+.plan-card:hover,.plan-card.sel{border-color:var(--blue);background:var(--blue-lt)}
+.plan-name{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.plan-amt{font-size:20px;font-weight:800}
+.plan-sub{font-size:11px;color:var(--text3)}
+.plan-save{position:absolute;top:8px;right:8px;font-size:9px;font-weight:700;background:var(--green-lt);color:var(--green);padding:2px 7px;border-radius:5px}
+.plan-chk{position:absolute;top:8px;right:8px;display:none;width:18px;height:18px;background:var(--blue);border-radius:50%;align-items:center;justify-content:center;color:#fff;font-size:11px}
+.plan-card.sel .plan-chk{display:flex}
+.plan-card.sel .plan-save{display:none}
+.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.method-btn{border:2px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;background:var(--white);transition:all .15s}
+.method-btn:hover,.method-btn.sel{border-color:var(--blue);background:var(--blue-lt)}
+.method-icon{width:36px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+.cc-preview{background:linear-gradient(135deg,#1a237e,#3949AB);border-radius:12px;padding:14px 18px;margin-bottom:14px;min-height:90px}
+.cc-chip{width:26px;height:16px;background:#FFD54F;border-radius:3px;margin-bottom:10px}
+.cc-num{font-size:12px;letter-spacing:.15em;color:rgba(255,255,255,.9);font-weight:500;margin-bottom:8px;font-family:monospace}
+.cc-row{display:flex;justify-content:space-between}
+.cc-lbl{font-size:9px;color:rgba(255,255,255,.6)}
+.cc-val{font-size:11px;color:#fff;font-weight:500}
+.summary-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.summary-row:last-child{border:none;font-weight:700;font-size:15px;margin-top:4px}
+.summary-lbl{color:var(--text2)}
+.pay-btn{width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px;font-family:inherit}
+.pay-btn:hover{background:var(--blue-dk)}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.success-icon{width:56px;height:56px;background:var(--green-lt);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px}
+.steps{display:flex;align-items:center;margin-bottom:18px}
+.step-dot{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:var(--text3)}
+.step-dot.done{background:var(--blue);border-color:var(--blue);color:#fff}
+.step-dot.active{border-color:var(--blue);color:var(--blue)}
+.step-lbl{font-size:11px;color:var(--text3);margin-left:4px;white-space:nowrap}
+.step-lbl.active,.step-lbl.done{color:var(--text);font-weight:600}
+.step-line{flex:1;height:1px;background:var(--border);margin:0 6px}
+.step-line.done{background:var(--blue)}
+
+/* Guard screen */
+.approval-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px}
+.approval-card.urgent{border-left:3px solid var(--amber)}
+.big-avatar{width:42px;height:42px;border-radius:50%;background:var(--blue-lt);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0}
+
+/* bar chart */
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:80px;padding-top:8px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.bar-fill{width:100%;border-radius:3px 3px 0 0;min-height:4px;transition:height .4s}
+.bar-lbl{font-size:9px;color:var(--text3)}
+
+/* Notice card */
+.notice-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px}
+.notice-pin{color:var(--amber);font-size:11px;margin-left:4px}
+/* ── AI Chatbot widget ────────────────────────────────────────────── */
+#chat-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1a237e,#3B4FD4);border:none;cursor:pointer;box-shadow:0 4px 16px rgba(59,79,212,.45);z-index:200;display:flex;align-items:center;justify-content:center;font-size:24px;transition:transform .15s}
+#chat-fab:hover{transform:scale(1.08)}
+#chat-fab .chat-badge{position:absolute;top:-2px;right:-2px;width:16px;height:16px;background:var(--red);border-radius:50%;border:2px solid var(--white);display:none}
+#chat-panel{position:fixed;bottom:86px;right:24px;width:360px;max-height:520px;background:var(--white);border-radius:16px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:200;display:none;flex-direction:column;overflow:hidden}
+#chat-panel.open{display:flex}
+@media(max-width:600px){#chat-panel{left:8px;right:8px;width:auto;bottom:80px;max-height:70vh}}
+.chat-header{background:linear-gradient(135deg,#1a237e,#3B4FD4);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+.chat-avatar{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.chat-title{font-size:14px;font-weight:700}
+.chat-sub{font-size:11px;opacity:.75}
+.chat-close{margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;opacity:.8;line-height:1}
+.chat-close:hover{opacity:1}
+#chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:200px}
+.msg{max-width:85%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.msg.bot{background:var(--blue-lt);color:var(--text);border-bottom-left-radius:3px;align-self:flex-start}
+.msg.user{background:var(--blue);color:#fff;border-bottom-right-radius:3px;align-self:flex-end}
+.msg.typing{background:var(--bg);color:var(--text3);font-style:italic}
+.chat-footer{padding:10px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center}
+.chat-footer input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:20px;font-size:13px;outline:none;font-family:inherit}
+.chat-footer input:focus{border-color:var(--blue)}
+.chat-footer button{width:34px;height:34px;border-radius:50%;background:var(--blue);border:none;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-footer button:hover{background:var(--blue-dk)}
+.chat-suggestions{display:flex;flex-wrap:wrap;gap:5px;padding:0 14px 10px}
+.chat-sug{padding:4px 11px;background:var(--bg);border:1px solid var(--border);border-radius:12px;font-size:11px;color:var(--blue);cursor:pointer;white-space:nowrap}
+.chat-sug:hover{background:var(--blue-lt)}
+/* ── Expenses ─────────────────────────────────────────────────────── */
+.exp-cat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.exp-bar{height:6px;border-radius:3px;background:var(--blue);margin-top:4px;transition:width .4s}
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">SP</div>
+    <div class="auth-title">SocietyPro</div>
+    <div class="auth-sub">Smart Society Management</div>
+    <div id="step-mobile">
+      <div class="field">
+        <label>Mobile Number</label>
+        <input type="tel" id="mob-inp" placeholder="9999000001" maxlength="10"
+          style="text-align:center;font-size:20px;font-weight:700;letter-spacing:.1em"
+          onkeydown="if(event.key==='Enter')doSendOtp()">
+      </div>
+      <button class="big-btn" onclick="doSendOtp()">Get OTP →</button>
+      <p style="text-align:center;font-size:11px;color:var(--text3);margin-top:14px;line-height:1.8">
+        Demo logins:<br>
+        <b>9999000000</b> Super Admin &nbsp;|&nbsp; <b>9999000001</b> Society Admin<br>
+        <b>9999000002</b> Owner &nbsp;|&nbsp; <b>9999000006</b> Tenant &nbsp;|&nbsp; <b>9999000008</b> Guard
+      </p>
+    </div>
+    <div id="step-otp" style="display:none">
+      <p style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:4px">OTP sent to <b id="mob-show"></b></p>
+      <div id="dev-box" class="dev-box" style="display:none"></div>
+      <div class="otp-row" id="otp-boxes"></div>
+      <button class="big-btn" onclick="doVerifyOtp()">Verify & Login</button>
+      <p style="text-align:center;margin-top:10px"><span style="font-size:12px;color:var(--blue);cursor:pointer" onclick="showMobileStep()">← Change number</span></p>
+    </div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="sidebar">
+    <div class="sb-logo">
+      <div class="logo-box">SP</div>
+      <div><div class="logo-txt">SocietyPro</div></div>
+    </div>
+    <div class="sb-soc" id="sb-soc">
+      <div class="sb-soc-name" id="sb-soc-name">Loading...</div>
+      <div class="sb-soc-sub" id="sb-soc-sub"></div>
+    </div>
+    <div id="nav-menu"></div>
+    <div class="sb-user" onclick="showProfile()">
+      <div class="avatar" id="sb-av">?</div>
+      <div style="min-width:0;flex:1">
+        <div class="sb-uname" id="sb-nm">...</div>
+        <div class="sb-urole" id="sb-rl"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="topbar">
+      <div class="tb-hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></div>
+      <span class="tb-title" id="tb-title">Dashboard</span>
+      <div id="tb-actions"></div>
+    </div>
+    <div id="content"><div class="loading">Loading...</div></div>
+  </div>
+</div>
+
+<div id="overlay" onclick="closeSidebar()"></div>
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title"><span id="modal-ttl">Title</span><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+<div id="toast-container"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let TOKEN = localStorage.getItem('sp_token');
+let ME    = null;
+let ROLE  = null;
+let SOCIETY_ID = parseInt(localStorage.getItem('sp_sid') || '1');
+let PAY = {step:1,plan:'MONTHLY',method:'CREDIT_CARD',flatId:null,upiApp:'GPay',card4:''};
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const h = {'Content-Type':'application/json'};
+  if (TOKEN) h['Authorization'] = 'Bearer ' + TOKEN;
+  const r = await fetch('/api' + path, {method, headers:h, body:body?JSON.stringify(body):undefined});
+  const d = await r.json();
+  if (!d.success) throw new Error(d.message || 'Error');
+  return d;
+}
+const GET  = p    => api('GET', p);
+const POST = (p,b)=> api('POST',p,b);
+const PUT  = (p,b)=> api('PUT', p,b);
+const DEL  = p    => api('DELETE',p);
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='success', dur=3500) {
+  const t=document.createElement('div'); t.className='toast '+type; t.textContent=msg;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>t.remove(), dur);
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal(title, html) {
+  document.getElementById('modal-ttl').textContent = title;
+  document.getElementById('modal-body').innerHTML  = html;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function rupees(n) { return '₹'+parseFloat(n||0).toLocaleString('en-IN',{minimumFractionDigits:0}); }
+function timeAgo(ts) {
+  if(!ts) return '—';
+  const s=(Date.now()-new Date(ts).getTime())/1000;
+  if(s<60) return 'just now'; if(s<3600) return Math.round(s/60)+'m ago';
+  if(s<86400) return Math.round(s/3600)+'h ago'; return Math.round(s/86400)+'d ago';
+}
+function statusBadge(s) {
+  const m={PAID:'green',PENDING:'amber',OVERDUE:'red',
+           APPROVED:'blue',INSIDE:'green',EXITED:'gray',REJECTED:'red',
+           OPEN:'red',IN_PROGRESS:'amber',RESOLVED:'green',CLOSED:'gray',
+           OWNER_OCCUPIED:'blue',TENANT_OCCUPIED:'purple',VACANT:'gray',
+           MORNING:'blue',AFTERNOON:'amber',NIGHT:'gray'};
+  const l={IN_PROGRESS:'In Progress',OWNER_OCCUPIED:'Owner',TENANT_OCCUPIED:'Tenant'};
+  return `<span class="badge ${m[s]||'gray'}">${l[s]||s}</span>`;
+}
+function priBadge(p) { return `<span class="badge ${{HIGH:'red',URGENT:'red',MEDIUM:'amber',LOW:'green'}[p]||'gray'}">${p}</span>`; }
+function accentColor() {
+  return {SOCIETY_ADMIN:'var(--admin-accent)',OWNER:'var(--owner-accent)',TENANT:'var(--tenant-accent)',GUARD:'var(--guard-accent)'}[ROLE]||'var(--blue)';
+}
+function render(html) { document.getElementById('content').innerHTML = html; }
+function setTitle(t) { document.getElementById('tb-title').textContent = t; }
+function setActions(html) { document.getElementById('tb-actions').innerHTML = html; }
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function buildOtpBoxes() {
+  const c=document.getElementById('otp-boxes'); c.innerHTML='';
+  for(let i=0;i<6;i++){
+    const inp=document.createElement('input');
+    inp.type='number'; inp.id='o'+i; inp.className='otp-box'; inp.maxLength=1;
+    inp.addEventListener('input',()=>otpInput(inp,i));
+    inp.addEventListener('keydown',e=>{ if(e.key==='Backspace'&&!inp.value&&i>0) document.getElementById('o'+(i-1)).focus(); });
+    c.appendChild(inp);
+  }
+}
+buildOtpBoxes();
+
+function otpInput(el,idx) {
+  const v=el.value.replace(/\D/g,''); el.value=v.slice(-1);
+  if(v&&idx<5) document.getElementById('o'+(idx+1)).focus();
+  if(idx===5&&v) doVerifyOtp();
+}
+
+async function doSendOtp() {
+  const mobile=document.getElementById('mob-inp').value.replace(/\D/g,'');
+  if(mobile.length<10){toast('Enter valid 10-digit mobile','error');return;}
+  try {
+    const r=await POST('/auth/send-otp',{mobile});
+    document.getElementById('mob-show').textContent=mobile;
+    document.getElementById('step-mobile').style.display='none';
+    document.getElementById('step-otp').style.display='block';
+    if(r.data?.dev_otp){
+      const b=document.getElementById('dev-box'); b.style.display='block';
+      b.innerHTML=`🔑 Dev OTP: <b>${r.data.dev_otp}</b>`;
+      r.data.dev_otp.split('').forEach((c,i)=>{const el=document.getElementById('o'+i);if(el)el.value=c;});
+    }
+    document.getElementById('o0').focus();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function doVerifyOtp() {
+  const mobile=document.getElementById('mob-show').textContent;
+  const otp=[0,1,2,3,4,5].map(i=>document.getElementById('o'+i).value).join('');
+  if(otp.length<6){toast('Enter full 6-digit OTP','error');return;}
+  try {
+    const r=await POST('/auth/verify-otp',{mobile,otp});
+    TOKEN=r.data.token; ME=r.data.user; ROLE=ME.role;
+    localStorage.setItem('sp_token',TOKEN);
+    if(ME.societies?.length>0) { SOCIETY_ID=ME.societies[0].id; localStorage.setItem('sp_sid',SOCIETY_ID); }
+    else if(ME.flat) { SOCIETY_ID=ME.flat.society_id; localStorage.setItem('sp_sid',SOCIETY_ID); }
+    else if(ME.guard_info) { SOCIETY_ID=ME.guard_info.society_id; localStorage.setItem('sp_sid',SOCIETY_ID); }
+    startApp();
+  } catch(e){toast(e.message,'error');}
+}
+
+function showMobileStep() {
+  document.getElementById('step-mobile').style.display='block';
+  document.getElementById('step-otp').style.display='none';
+}
+
+function logout() {
+  localStorage.removeItem('sp_token'); localStorage.removeItem('sp_sid');
+  TOKEN=null; ME=null; location.reload();
+}
+
+// ── App Start ─────────────────────────────────────────────────────────────────
+async function startApp() {
+  if(!ME) {
+    try { const r=await GET('/auth/me'); ME=r.data; ROLE=ME.role; } catch(e){logout();return;}
+  }
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.body.setAttribute('data-role', ROLE);
+
+  // Avatar
+  const initials=(ME.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('sb-av').textContent=initials;
+  document.getElementById('sb-av').style.background=accentColor();
+  document.getElementById('sb-nm').textContent=ME.name||ME.mobile;
+  document.getElementById('sb-rl').textContent=ROLE;
+
+  buildNav();
+  loadSocietyInfo();
+  loadBadges();
+
+  // First page by role
+  if(ROLE==='SUPER_ADMIN')   navTo('saHome');
+  else if(ROLE==='SOCIETY_ADMIN') navTo('dashboard');
+  else if(ROLE==='OWNER')    navTo('ownerHome');
+  else if(ROLE==='TENANT')   navTo('tenantHome');
+  else if(ROLE==='GUARD')    navTo('guardHome');
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────────
+const NAV_CONFIG = {
+  SUPER_ADMIN: [
+    {lbl:'Platform',    items:[{id:'saHome',icon:'🌐',name:'Platform Overview'},{id:'saUsers',icon:'👥',name:'All Users'},{id:'saSocieties',icon:'🏘',name:'All Societies'}]},
+    {lbl:'Operations',  items:[{id:'dashboard',icon:'⊞',name:'Dashboard'},{id:'flats',icon:'🏠',name:'Flats'},{id:'maintenance',icon:'📋',name:'Maintenance'},{id:'expenses',icon:'💰',name:'Expenses'},{id:'bank',icon:'🏦',name:'Bank Account'}]},
+    {lbl:'Community',   items:[{id:'visitors',icon:'👤',name:'Visitors',badge:'nb-vis'},{id:'feedback',icon:'💬',name:'Feedback',badge:'nb-fb'},{id:'announcements',icon:'📢',name:'Announcements'},{id:'guards',icon:'🛡',name:'Guards'}]},
+  ],
+  SOCIETY_ADMIN: [
+    {lbl:'Overview',    items:[{id:'dashboard',icon:'⊞',name:'Dashboard'},{id:'plan',icon:'⭐',name:'My Plan'}]},
+    {lbl:'Management',  items:[{id:'societies',icon:'🏘',name:'Societies'},{id:'flats',icon:'🏠',name:'Flats & Residents'},{id:'guards',icon:'🛡',name:'Guard Roster'}]},
+    {lbl:'Finance',     items:[{id:'maintenance',icon:'📋',name:'Maintenance'},{id:'expenses',icon:'💰',name:'Monthly Expenses'},{id:'bank',icon:'🏦',name:'Bank Account'}]},
+    {lbl:'Services',    items:[{id:'services',icon:'🔧',name:'Service Directory'},{id:'serviceReqs',icon:'📅',name:'Service Requests'}]},
+    {lbl:'Community',   items:[{id:'visitors',icon:'👤',name:'Visitors',badge:'nb-vis'},{id:'feedback',icon:'💬',name:'Feedback',badge:'nb-fb'},{id:'announcements',icon:'📢',name:'Announcements'}]},
+  ],
+  OWNER: [
+    {lbl:'My Home',     items:[{id:'ownerHome',icon:'🏠',name:'My Flat'},{id:'ownerPay',icon:'💳',name:'Pay Maintenance'},{id:'ownerHistory',icon:'📄',name:'Payment History'}]},
+    {lbl:'Services',    items:[{id:'ownerServices',icon:'🔧',name:'Book a Service'},{id:'ownerServiceReqs',icon:'📅',name:'My Bookings'}]},
+    {lbl:'Visitors',    items:[{id:'ownerVisitors',icon:'👤',name:'My Visitors',badge:'nb-vis'}]},
+    {lbl:'Community',   items:[{id:'ownerFeedback',icon:'💬',name:'Complaints'},{id:'ownerAnnounce',icon:'📢',name:'Notices'}]},
+  ],
+  TENANT: [
+    {lbl:'My Home',     items:[{id:'tenantHome',icon:'🏠',name:'My Flat'},{id:'tenantPay',icon:'💳',name:'Pay Maintenance'},{id:'tenantHistory',icon:'📄',name:'Payment History'}]},
+    {lbl:'Services',    items:[{id:'tenantServices',icon:'🔧',name:'Book a Service'},{id:'tenantServiceReqs',icon:'📅',name:'My Bookings'}]},
+    {lbl:'Visitors',    items:[{id:'tenantVisitors',icon:'👤',name:'My Visitors',badge:'nb-vis'}]},
+    {lbl:'Community',   items:[{id:'tenantFeedback',icon:'💬',name:'Complaints'},{id:'tenantAnnounce',icon:'📢',name:'Notices'}]},
+  ],
+  GUARD: [
+    {lbl:'My Shift',    items:[{id:'guardHome',icon:'🛡',name:'Dashboard'},{id:'guardVisitors',icon:'👤',name:'Visitor Management',badge:'nb-vis'},{id:'guardLog',icon:'➕',name:'Log New Visitor'}]},
+  ],
+};
+
+const PAGE_LOADER = {
+  plan:             loadPlanPage,
+  expenses:         loadExpenses,
+  serviceReqs:      ()=>guardedLoad('service_requests','Service Requests',loadServiceRequests),
+  ownerServices:    ()=>guardedLoad('service_directory','Service Directory',loadServices),
+  ownerServiceReqs: ()=>guardedLoad('service_requests','Service Bookings',()=>loadServiceRequests('owner')),
+  tenantServices:   ()=>guardedLoad('service_directory','Service Directory',loadServices),
+  tenantServiceReqs:()=>guardedLoad('service_requests','Service Bookings',()=>loadServiceRequests('tenant')),
+  saHome:           loadSAHome,
+  saUsers:       loadSAUsers,
+  saSocieties:   loadSASocieties,
+  dashboard:     loadAdminDashboard,
+  societies:     loadSocieties,
+  flats:         loadFlats,
+  guards:        loadGuards,
+  maintenance:   ()=>guardedLoad('maintenance','Maintenance Billing',loadMaintenance),
+  bank:          ()=>guardedLoad('bank_account','Bank Account Management',loadBank),
+  visitors:      loadVisitors,
+  feedback:      loadFeedback,
+  announcements: loadAnnouncements,
+  ownerHome:     loadOwnerHome,
+  ownerPay:      ()=>guardedLoad('payments','Online Payments',()=>loadPayment(ME.flat?.id)),
+  ownerHistory:  ()=>guardedLoad('payment_history','Payment History',loadPayHistory),
+  ownerVisitors: loadMyVisitors,
+  ownerFeedback: loadMyFeedback,
+  ownerAnnounce: loadMyAnnounce,
+  tenantHome:    loadTenantHome,
+  tenantPay:     ()=>guardedLoad('payments','Online Payments',()=>loadPayment(ME.flat?.id)),
+  tenantHistory: ()=>guardedLoad('payment_history','Payment History',loadPayHistory),
+  tenantVisitors:loadMyVisitors,
+  tenantFeedback:loadMyFeedback,
+  tenantAnnounce:loadMyAnnounce,
+  guardHome:     loadGuardDashboard,
+  guardVisitors: loadGuardVisitors,
+  guardLog:      loadGuardLog,
+};
+
+function buildNav() {
+  const sections = NAV_CONFIG[ROLE] || [];
+  let html='';
+  for(const sec of sections) {
+    html+=`<div class="nav-sec"><div class="nav-lbl">${sec.lbl}</div>`;
+    for(const item of sec.items) {
+      const badge=item.badge?`<span class="nav-badge" id="${item.badge}" style="display:none">0</span>`:'';
+      html+=`<div class="nav-item" data-page="${item.id}" onclick="navTo('${item.id}',this)">${item.icon}&nbsp;${item.name}${badge}</div>`;
+    }
+    html+='</div>';
+  }
+  document.getElementById('nav-menu').innerHTML=html;
+}
+
+function navTo(page, el) {
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  else { const ni=document.querySelector(`[data-page="${page}"]`); if(ni)ni.classList.add('active'); }
+  render('<div class="loading">Loading...</div>');
+  setActions('');
+  (PAGE_LOADER[page]||(() => render('<div class="empty">Page not found</div>')))();
+  closeSidebar();
+}
+
+async function loadSocietyInfo() {
+  try {
+    const r=await GET('/societies/'+SOCIETY_ID);
+    const s=r.data;
+    document.getElementById('sb-soc-name').textContent=s.name;
+    const plan = s.plan?.current_plan || 'FREE';
+    const pending = s.plan?.request_status === 'PENDING';
+    document.getElementById('sb-soc-sub').innerHTML=
+      `${s.city||''} · ${s.total_active_flats} flats &nbsp;`+
+      (plan==='PAID'
+        ? '<span style="background:linear-gradient(135deg,#E65100,#F57F17);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px">⭐ PRO</span>'
+        : '<span style="background:#ECEFF1;color:#546E7A;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px">FREE</span>') +
+      (pending ? ' <span style="color:#1976D2;font-size:9px">● pending</span>' : '');
+    // cache plan
+    _CURRENT_PLAN = s.plan;
+  } catch(e){}
+}
+
+async function loadBadges() {
+  try {
+    const r=await GET('/dashboard/stats?society_id='+SOCIETY_ID);
+    const s=r.data;
+    const pv=ROLE==='GUARD'?s.pending_count:(s.pending_visitors||0);
+    const fbd=(ROLE==='SOCIETY_ADMIN'||ROLE==='SUPER_ADMIN')?(s.open_complaints||0):0;
+    ['nb-vis'].forEach(id=>{ const el=document.getElementById(id); if(!el)return; el.style.display=pv>0?'inline':'none'; el.textContent=pv; });
+    ['nb-fb'].forEach(id=>{ const el=document.getElementById(id); if(!el)return; el.style.display=fbd>0?'inline':'none'; el.textContent=fbd; });
+  } catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// PLAN MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _CURRENT_PLAN = null; // cached plan for this session
+
+async function ensurePlan() {
+  if(_CURRENT_PLAN) return _CURRENT_PLAN;
+  try { const r = await GET('/plans/'+SOCIETY_ID); _CURRENT_PLAN = r.data; } catch(e) { _CURRENT_PLAN = {current_plan:'FREE'}; }
+  return _CURRENT_PLAN;
+}
+
+function planBadge(plan) {
+  return plan==='PAID'
+    ? '<span class="badge" style="background:linear-gradient(135deg,#F57F17,#E65100);color:#fff;font-size:11px">⭐ PRO</span>'
+    : '<span class="badge gray">FREE</span>';
+}
+
+function upgradeBanner(feature) {
+  return `
+    <div style="background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border:1.5px solid #FFB300;border-radius:12px;padding:20px;text-align:center;margin:0 auto;max-width:480px">
+      <div style="font-size:36px;margin-bottom:8px">🔒</div>
+      <div style="font-size:16px;font-weight:800;color:#E65100;margin-bottom:6px">PRO Feature</div>
+      <div style="font-size:13px;color:#795548;margin-bottom:16px;line-height:1.6">
+        <b>${feature}</b> is available on the <b>PRO plan</b>.<br>
+        Upgrade your society to unlock maintenance billing, payment collection, bank account management, and more.
+      </div>
+      <button class="btn primary" onclick="navTo('plan',null)" style="background:#E65100;border-color:#E65100;padding:10px 24px;font-size:14px">⭐ View Plans & Upgrade</button>
+    </div>`;
+}
+
+async function loadPlanPage() {
+  setTitle('My Plan'); setActions('');
+  try {
+    const [planR, featR] = await Promise.all([GET('/plans/'+SOCIETY_ID), GET('/plans/features')]);
+    const plan = planR.data; _CURRENT_PLAN = plan;
+    const feats = featR.data;
+    const isPaid = plan.current_plan === 'PAID';
+    const hasPending = plan.request_status === 'PENDING';
+
+    // Plan comparison table
+    const allFeatureLabels = feats.feature_labels || {};
+    const freeFeats = feats.plans?.FREE?.features || [];
+    const paidFeats = feats.plans?.PAID?.features || [];
+    const allFeats = [...new Set([...freeFeats, ...paidFeats])];
+
+    const featureRows = allFeats.map(f => {
+      const inFree = freeFeats.includes(f);
+      const label = allFeatureLabels[f] || f;
+      const isLocked = !inFree && !isPaid;
+      return `<tr style="${isLocked?'':''}">
+        <td style="font-size:13px;color:${isLocked?'var(--text3)':'var(--text)'}">${label}${label.includes('coming soon')?'':''}</td>
+        <td style="text-align:center">${inFree?'<span style="color:var(--green);font-size:16px">✓</span>':'<span style="color:var(--border)">—</span>'}</td>
+        <td style="text-align:center"><span style="color:var(--green);font-size:16px">✓</span></td>
+      </tr>`;
+    }).join('');
+
+    let pendingBox = '';
+    if(hasPending) {
+      pendingBox = `
+        <div style="background:#E3F2FD;border:1.5px solid #1976D2;border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:#1976D2;margin-bottom:6px">📋 Pending Plan Change Request</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:12px">
+            A request to switch to <b>${plan.requested_plan}</b> plan is awaiting your final approval.
+            ${plan.requested_by_name ? `<br>Requested by: <b>${plan.requested_by_name}</b>` : ''}
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn success" onclick="doApprovePlan()">✓ Approve & Activate</button>
+            <button class="btn danger" onclick="doRejectPlan()">✗ Reject Request</button>
+          </div>
+        </div>`;
+    }
+
+    render(`
+      <!-- Current plan hero -->
+      <div style="background:${isPaid?'linear-gradient(135deg,#E65100,#F57F17)':'linear-gradient(135deg,#37474F,#546E7A)'};border-radius:14px;padding:22px;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:16px">
+        <div style="font-size:42px">${isPaid?'⭐':'🔓'}</div>
+        <div style="flex:1">
+          <div style="font-size:11px;opacity:.75;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Current Plan</div>
+          <div style="font-size:28px;font-weight:900;margin-bottom:2px">${isPaid?'PRO':'FREE'}</div>
+          <div style="font-size:12px;opacity:.8">${isPaid?'Full access to all features including payments & billing':'Basic features — upgrade to unlock payments & billing'}</div>
+        </div>
+        ${plan.plan_activated_at ? `<div style="font-size:11px;opacity:.65;text-align:right">Active since<br>${plan.plan_activated_at.slice(0,10)}</div>` : ''}
+      </div>
+
+      ${pendingBox}
+
+      <!-- Switch plan button -->
+      ${!hasPending ? `
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Switch Plan</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+          ${isPaid
+            ? 'You can downgrade to the FREE plan. Maintenance billing and payment features will be locked.'
+            : 'Upgrade to PRO to unlock maintenance billing, online payment collection, bank account management, and all future premium features.'}
+        </div>
+        <button class="btn primary" onclick="doRequestPlan('${isPaid?'FREE':'PAID'}')"
+          style="${isPaid?'':'background:#E65100;border-color:#E65100'}">
+          ${isPaid ? '↓ Request Downgrade to FREE' : '⭐ Request Upgrade to PRO'}
+        </button>
+        <p style="font-size:11px;color:var(--text3);margin-top:10px">
+          ${isPaid ? 'Downgrade requires your confirmation as Society Admin.' : '✓ Request sent → you review → approve → instantly activated.'}
+        </p>
+      </div>` : ''}
+
+      <!-- Feature comparison -->
+      <div class="card">
+        <div class="card-title">Feature Comparison</div>
+        <div class="tbl-wrap" style="margin:-4px">
+          <table>
+            <thead><tr><th>Feature</th><th style="text-align:center;width:80px">FREE</th><th style="text-align:center;width:80px;color:#E65100">⭐ PRO</th></tr></thead>
+            <tbody>${featureRows}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- History -->
+      ${plan.reviewed_at ? `
+      <div class="card">
+        <div class="card-title">Last Action</div>
+        <div style="font-size:13px;color:var(--text2)">
+          Status: <b>${plan.request_status}</b><br>
+          ${plan.reviewed_by_name ? `Reviewed by: ${plan.reviewed_by_name}<br>` : ''}
+          ${plan.reviewed_at ? `Date: ${plan.reviewed_at.slice(0,10)}<br>` : ''}
+          ${plan.review_note ? `Note: ${plan.review_note}` : ''}
+        </div>
+      </div>` : ''}
+    `);
+  } catch(e) { render('<div class="empty">'+e.message+'</div>'); }
+}
+
+async function doRequestPlan(targetPlan) {
+  const msg = targetPlan==='PAID'
+    ? 'Request upgrade to PRO plan? You will need to give final approval before it activates.'
+    : 'Request downgrade to FREE plan? Maintenance billing and payments will be locked after approval.';
+  if(!confirm(msg)) return;
+  try {
+    const r = await POST('/plans/'+SOCIETY_ID+'/request', {plan: targetPlan});
+    toast(r.data.message || 'Request submitted!');
+    _CURRENT_PLAN = null; // reset cache
+    loadPlanPage();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function doApprovePlan() {
+  if(!confirm('Confirm: activate the requested plan change now?')) return;
+  try {
+    const r = await PUT('/plans/'+SOCIETY_ID+'/approve', {note:'Approved by Society Admin'});
+    toast(r.data.message, 'success');
+    _CURRENT_PLAN = null;
+    loadPlanPage();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function doRejectPlan() {
+  if(!confirm('Reject this plan change request?')) return;
+  try {
+    const r = await PUT('/plans/'+SOCIETY_ID+'/reject', {note:'Rejected by Society Admin'});
+    toast(r.data.message);
+    _CURRENT_PLAN = null;
+    loadPlanPage();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function guardedLoad(feature, featureName, loader) {
+  const plan = await ensurePlan();
+  const freeFeats = ['flats','visitors','announcements','feedback','guards','dashboard_basic','profile'];
+  if(!freeFeats.includes(feature) && plan.current_plan !== 'PAID') {
+    render(`
+      <div class="upgrade-card">
+        <div style="font-size:42px;margin-bottom:10px">🔒</div>
+        <div style="font-size:18px;font-weight:800;color:#E65100;margin-bottom:8px">PRO Feature</div>
+        <div style="font-size:13px;color:#795548;margin-bottom:18px;line-height:1.7">
+          <b>${featureName}</b> is available on the PRO plan only.<br>
+          Your society is currently on the <b>FREE</b> plan.
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
+          <b>PRO plan includes:</b> Maintenance billing · Online payments · Bank account · Service provider directory · Booking & appointments · and more upcoming features
+        </div>
+        <button class="btn primary" onclick="navTo('plan',null)" style="background:#E65100;border-color:#E65100;padding:11px 28px;font-size:14px">⭐ View PRO Plan</button>
+      </div>`);
+    return false;
+  }
+  loader();
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SERVICE DIRECTORY
+// ═══════════════════════════════════════════════════════════════════════════════
+const SVC_CATS = ['ELECTRICIAN','PLUMBER','CARPENTER','PAINTER','MAID','CLEANING','AC_TECHNICIAN','PEST_CONTROL','OTHER'];
+const SVC_ICONS = {ELECTRICIAN:'⚡',PLUMBER:'🔧',CARPENTER:'🪚',PAINTER:'🎨',MAID:'🧹',CLEANING:'🧽',AC_TECHNICIAN:'❄️',PEST_CONTROL:'🪲',OTHER:'🛠'};
+const SVC_COLORS = {ELECTRICIAN:'#F57F17',PLUMBER:'#1565C0',CARPENTER:'#4E342E',PAINTER:'#6A1B9A',MAID:'#AD1457',CLEANING:'#00695C',AC_TECHNICIAN:'#0277BD',PEST_CONTROL:'#2E7D32',OTHER:'#546E7A'};
+
+function providerCard(p, showActions=false, isAdmin=false, isSA=false) {
+  const blocked = p.is_blocked;
+  const flagged = p.auto_flag && !blocked;
+  const stars = '⭐'.repeat(Math.round(p.rating_avg||0)) + '☆'.repeat(5-Math.round(p.rating_avg||0));
+  const statusBg = {APPROVED:'var(--green-lt)',PENDING:'var(--amber-lt)',REJECTED:'var(--red-lt)'}[p.verification_status]||'var(--bg)';
+  const statusColor = {APPROVED:'var(--green)',PENDING:'var(--amber)',REJECTED:'var(--red)'}[p.verification_status]||'var(--text3)';
+  return `
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;${blocked?'opacity:.6':''}${flagged?';border-left:3px solid var(--red)':''}">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="width:46px;height:46px;border-radius:10px;background:${SVC_COLORS[p.category]||'#546E7A'}22;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${SVC_ICONS[p.category]||'🛠'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-size:14px;font-weight:700">${p.name}</span>
+            ${p.provider_code?`<span style="font-size:10px;font-family:monospace;background:var(--blue-lt);color:var(--blue);padding:1px 7px;border-radius:5px;font-weight:700">${p.provider_code}</span>`:''}
+            ${blocked?'<span class="badge red">BLOCKED</span>':''}
+            ${flagged?'<span class="badge red">⚠ Flagged</span>':''}
+            ${p.verification_status!=='APPROVED'?`<span style="font-size:10px;font-weight:700;color:${statusColor};background:${statusBg};padding:1px 8px;border-radius:5px">${p.verification_status}</span>`:''}
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${p.category.replace('_',' ')} ${p.experience_years?`· ${p.experience_years}yr exp`:''} ${p.hourly_rate?`· ₹${p.hourly_rate}/hr`:''}</div>
+          <div style="font-size:11px;margin-top:3px">${stars} <span style="color:var(--text3)">(${p.positive_count||0} 👍 ${p.negative_count||0} 👎 · ${p.rating_count||0} reviews)</span></div>
+          ${p.mobile?`<div style="font-size:11px;color:var(--text2);margin-top:2px">📞 ${p.mobile}</div>`:''}
+          ${p.bio?`<div style="font-size:11px;color:var(--text3);margin-top:3px">${p.bio}</div>`:''}
+        </div>
+      </div>
+      ${showActions?`
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        ${!isAdmin&&!isSA?`<button class="btn sm primary" onclick="bookService(${p.id},'${p.name}','${p.category}')">📅 Book Appointment</button>`:''}
+        ${isAdmin||isSA?`<button class="btn xs" onclick="viewProviderDetail(${p.id})">View Detail</button>`:''}
+        ${isSA&&p.verification_status==='PENDING'?`<button class="btn xs success" onclick="approveProvider(${p.id})">✓ Approve</button><button class="btn xs danger" onclick="rejectProvider(${p.id})">✗ Reject</button>`:''}
+        ${isSA&&!blocked?`<button class="btn xs danger" onclick="blockProvider(${p.id},'${p.name}')">🚫 Block</button>`:''}
+        ${isSA&&blocked?`<button class="btn xs success" onclick="unblockProvider(${p.id})">✓ Unblock</button>`:''}
+        ${(isAdmin||isSA)&&p.verification_status==='APPROVED'?`<button class="btn xs" onclick="linkProvider(${p.id})">+ Link Society</button>`:''}
+      </div>`:''}
+    </div>`;
+}
+
+async function loadServices() {
+  const isSA = ROLE==='SUPER_ADMIN';
+  const isAdmin = ROLE==='SOCIETY_ADMIN';
+  setTitle('Service Directory');
+  setActions(`<button class="btn sm primary" onclick="showAddProviderModal()">+ Add Provider</button>`);
+
+  try {
+    const url = isSA
+      ? '/services/providers?status=ALL&page=1'
+      : `/services/providers?society_id=${SOCIETY_ID}&page=1`;
+    const r = await GET(url);
+    const providers = r.data||[];
+
+    // Group by category
+    const byCat = {};
+    providers.forEach(p => { if(!byCat[p.category]) byCat[p.category]=[]; byCat[p.category].push(p); });
+
+    // Filter chips
+    const cats = [...new Set(providers.map(p=>p.category))];
+    const chips = cats.map(c=>`<span class="chip" onclick="filterProviders('${c}',this)">${SVC_ICONS[c]||'🛠'} ${c.replace('_',' ')}</span>`).join('');
+
+    let html = `
+      <div class="chip-row" id="cat-chips" style="margin-bottom:12px">
+        <span class="chip active" onclick="filterProviders('ALL',this)">All (${providers.length})</span>
+        ${chips}
+      </div>
+      <div id="providers-list">`;
+
+    if(providers.length===0) {
+      html += `<div class="empty">No service providers yet.<br>Click <b>+ Add Provider</b> to register the first one.</div>`;
+    } else {
+      // Pending flagged at top for SA
+      if(isSA) {
+        const pending = providers.filter(p=>p.verification_status==='PENDING');
+        const flagged = providers.filter(p=>p.auto_flag&&!p.is_blocked&&p.verification_status==='APPROVED');
+        if(pending.length) html+=`<div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:8px">⏳ Pending Approval (${pending.length})</div>${pending.map(p=>providerCard(p,true,isAdmin,isSA)).join('')}`;
+        if(flagged.length) html+=`<div style="font-size:12px;font-weight:700;color:var(--red);margin:12px 0 8px">⚠️ Flagged for Review (${flagged.length})</div>${flagged.map(p=>providerCard(p,true,isAdmin,isSA)).join('')}`;
+        const rest = providers.filter(p=>p.verification_status==='APPROVED'&&!p.auto_flag&&!p.is_blocked);
+        if(rest.length) html+=`<div style="font-size:12px;font-weight:700;color:var(--text2);margin:12px 0 8px">✅ Active Providers (${rest.length})</div>${rest.map(p=>providerCard(p,true,isAdmin,isSA)).join('')}`;
+        const blocked = providers.filter(p=>p.is_blocked);
+        if(blocked.length) html+=`<div style="font-size:12px;font-weight:700;color:var(--text3);margin:12px 0 8px">🚫 Blocked (${blocked.length})</div>${blocked.map(p=>providerCard(p,true,isAdmin,isSA)).join('')}`;
+      } else {
+        html += providers.map(p=>providerCard(p,true,isAdmin,isSA)).join('');
+      }
+    }
+    html += '</div>';
+    render(html);
+  } catch(e) { render('<div class="empty">'+e.message+'</div>'); }
+}
+
+// Filter by category
+window._allProvidersData = [];
+function filterProviders(cat, el) {
+  document.querySelectorAll('#cat-chips .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const isSA=ROLE==='SUPER_ADMIN', isAdmin=ROLE==='SOCIETY_ADMIN';
+  const list=document.getElementById('providers-list'); if(!list)return;
+  // Re-fetch with filter
+  const url = isSA?`/services/providers?status=ALL&page=1${cat!=='ALL'?'&category='+cat:''}`:`/services/providers?society_id=${SOCIETY_ID}&page=1${cat!=='ALL'?'&category='+cat:''}`;
+  GET(url).then(r=>{
+    const providers=r.data||[];
+    list.innerHTML=providers.length?providers.map(p=>providerCard(p,true,isAdmin,isSA)).join(''):'<div class="empty">No providers in this category</div>';
+  }).catch(e=>toast(e.message,'error'));
+}
+
+function showAddProviderModal() {
+  openModal('Add Service Provider', `
+    <div class="field"><label>Full Name *</label><input id="spn" placeholder="Provider's full name"></div>
+    <div class="grid-2"><div class="field"><label>Mobile *</label><input id="spm" placeholder="9876543210" type="tel"></div>
+    <div class="field"><label>Email</label><input id="spe" type="email" placeholder="email@example.com"></div></div>
+    <div class="field"><label>Category *</label><select id="spc">
+      ${SVC_CATS.map(c=>`<option value="${c}">${SVC_ICONS[c]||'🛠'} ${c.replace('_',' ')}</option>`).join('')}
+    </select></div>
+    <div class="grid-2"><div class="field"><label>Experience (years)</label><input id="spexp" type="number" placeholder="5" min="0"></div>
+    <div class="field"><label>Hourly Rate (₹)</label><input id="sprate" type="number" placeholder="300"></div></div>
+    <div class="field"><label>Specializations</label><input id="spspec" placeholder="e.g. AC repair, Wiring, Plumbing"></div>
+    <div class="field"><label>ID Proof Type</label><select id="spit"><option value="">— Select —</option><option>AADHAAR</option><option>PAN</option><option>VOTER_ID</option><option>PASSPORT</option></select></div>
+    <div class="field"><label>ID Proof Number</label><input id="spid" placeholder="ID number"></div>
+    <div class="field"><label>Short Bio</label><textarea id="spbio" rows="2" placeholder="Brief introduction..."></textarea></div>
+    <div style="background:var(--blue-lt);border-radius:8px;padding:9px;font-size:12px;color:var(--blue);margin-bottom:12px">
+      ℹ️ Request goes to Super Admin for approval. ${ROLE==='SUPER_ADMIN'?'<b>As Super Admin, your additions are auto-approved.</b>':'A unique provider ID will be assigned after approval.'}
+    </div>
+    <button class="btn primary" style="width:100%" onclick="submitProvider()">Submit for Approval</button>`);
+}
+
+async function submitProvider() {
+  const name=document.getElementById('spn')?.value?.trim();
+  const mobile=document.getElementById('spm')?.value?.replace(/\D/g,'');
+  if(!name){toast('Name required','error');return;}
+  if(!mobile||mobile.length<10){toast('Valid mobile required','error');return;}
+  try {
+    const r = await POST('/services/providers',{
+      name, mobile, email:document.getElementById('spe')?.value,
+      category:document.getElementById('spc')?.value,
+      experience_years:+document.getElementById('spexp')?.value||0,
+      hourly_rate:+document.getElementById('sprate')?.value||null,
+      specializations:document.getElementById('spspec')?.value,
+      id_proof_type:document.getElementById('spit')?.value,
+      id_proof_number:document.getElementById('spid')?.value,
+      bio:document.getElementById('spbio')?.value,
+      society_id:SOCIETY_ID
+    });
+    const msg = ROLE==='SUPER_ADMIN'?`Provider approved! Code: ${r.data.provider_code}`:'Provider submitted for Super Admin approval!';
+    toast(msg); closeModal(); loadServices();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function approveProvider(pid) {
+  try { await PUT('/services/providers/'+pid+'/approve',{}); toast('Provider approved & code assigned!'); loadServices(); }
+  catch(e){toast(e.message,'error');}
+}
+
+async function rejectProvider(pid) {
+  const note = prompt('Reason for rejection:','Does not meet requirements');
+  if(note===null)return;
+  try { await PUT('/services/providers/'+pid+'/reject',{note}); toast('Provider rejected'); loadServices(); }
+  catch(e){toast(e.message,'error');}
+}
+
+async function blockProvider(pid, name) {
+  const reason = prompt(`Reason for blocking "${name}":`, 'Too many negative reviews');
+  if(reason===null)return;
+  try { await PUT('/services/providers/'+pid+'/block',{reason}); toast('Provider blocked'); loadServices(); }
+  catch(e){toast(e.message,'error');}
+}
+
+async function unblockProvider(pid) {
+  if(!confirm('Unblock this provider?'))return;
+  try { await PUT('/services/providers/'+pid+'/unblock',{}); toast('Provider unblocked'); loadServices(); }
+  catch(e){toast(e.message,'error');}
+}
+
+async function viewProviderDetail(pid) {
+  try {
+    const r = await GET('/services/providers/'+pid);
+    const p = r.data;
+    const ratings = (p.ratings||[]).slice(0,8).map(rt=>`
+      <div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:16px">${rt.rating_type==='POSITIVE'?'👍':'👎'}</span>
+        <div style="flex:1"><div style="font-size:12px;font-weight:600">${rt.rated_by_name||'Resident'} ${rt.flat_number?`(Flat ${rt.flat_number})`:''}</div>
+        ${rt.comment?`<div style="font-size:11px;color:var(--text3)">${rt.comment}</div>`:''}
+        </div><div style="font-size:10px;color:var(--text3)">${rt.created_at?.slice(0,10)}</div>
+      </div>`).join('');
+    openModal(p.name, `
+      ${providerCard(p,false,false,ROLE==='SUPER_ADMIN')}
+      ${p.rejection_note?`<div style="background:var(--red-lt);padding:8px;border-radius:6px;font-size:12px;color:var(--red);margin-bottom:10px">Rejected: ${p.rejection_note}</div>`:''}
+      ${p.block_reason?`<div style="background:var(--red-lt);padding:8px;border-radius:6px;font-size:12px;color:var(--red);margin-bottom:10px">Blocked: ${p.block_reason}</div>`:''}
+      <div style="font-size:12px;font-weight:700;margin:10px 0 6px">Reviews (${p.rating_count||0})</div>
+      ${ratings||'<div style="font-size:12px;color:var(--text3)">No reviews yet</div>'}
+      <div style="margin-top:12px;display:flex;gap:6px">
+        ${ROLE==='SUPER_ADMIN'&&p.verification_status==='PENDING'?`<button class="btn sm success" onclick="approveProvider(${p.id});closeModal()">Approve</button><button class="btn sm danger" onclick="rejectProvider(${p.id});closeModal()">Reject</button>`:''}
+        ${ROLE==='SUPER_ADMIN'&&!p.is_blocked?`<button class="btn sm danger" onclick="blockProvider(${p.id},'${p.name}');closeModal()">Block</button>`:''}
+        ${ROLE==='SUPER_ADMIN'&&p.is_blocked?`<button class="btn sm success" onclick="unblockProvider(${p.id});closeModal()">Unblock</button>`:''}
+      </div>`);
+  } catch(e){toast(e.message,'error');}
+}
+
+async function linkProvider(pid) {
+  try { await POST('/services/providers/'+pid+'/link',{society_id:SOCIETY_ID}); toast('Provider linked to this society'); }
+  catch(e){toast(e.message,'error');}
+}
+
+function bookService(pid, name, category) {
+  openModal(`Book ${category.replace('_',' ')} — ${name}`, `
+    <div class="field"><label>Service Needed</label><input id="bsdesc" placeholder="Describe what needs to be done..."></div>
+    <div class="grid-2"><div class="field"><label>Preferred Date</label><input id="bsdate" type="date"></div>
+    <div class="field"><label>Preferred Time</label><select id="bstime">
+      <option>Morning (9-12)</option><option>Afternoon (12-3)</option>
+      <option>Evening (3-6)</option><option>Flexible</option>
+    </select></div></div>
+    <div style="background:var(--blue-lt);border-radius:8px;padding:9px;font-size:12px;color:var(--blue);margin-bottom:10px">
+      Your society admin will confirm the appointment and you'll be notified.
+    </div>
+    <button class="btn primary" style="width:100%" onclick="submitBooking(${pid},'${category}')">📅 Request Appointment</button>`);
+}
+
+async function submitBooking(pid, cat) {
+  try {
+    await POST('/services/requests',{
+      provider_id:pid, service_category:cat,
+      description:document.getElementById('bsdesc')?.value,
+      preferred_date:document.getElementById('bsdate')?.value,
+      preferred_time:document.getElementById('bstime')?.value
+    });
+    toast('Appointment request submitted!'); closeModal();
+    navTo(ROLE==='OWNER'?'ownerServiceReqs':'tenantServiceReqs',null);
+  } catch(e){toast(e.message,'error');}
+}
+
+async function loadServiceRequests(mode) {
+  setTitle('Service Requests');
+  const isSA=ROLE==='SUPER_ADMIN', isAdmin=ROLE==='SOCIETY_ADMIN';
+  try {
+    const url = (isSA||isAdmin)?`/services/requests?society_id=${SOCIETY_ID}&page=1`:'/services/requests?page=1';
+    const r = await GET(url);
+    const reqs = r.data||[];
+    const statusColors={PENDING:'amber',CONFIRMED:'blue',IN_PROGRESS:'blue',COMPLETED:'green',CANCELLED:'gray'};
+    const rows = reqs.map(req=>`
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:18px">${SVC_ICONS[req.category]||'🛠'}</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700">${req.provider_name||'—'} <span style="font-size:10px;color:var(--text3)">${req.provider_code||''}</span></div>
+            <div style="font-size:11px;color:var(--text3)">${req.service_category?.replace('_',' ')} ${req.flat_number?`· Flat ${req.flat_number}`:''}</div>
+          </div>
+          ${statusBadge(req.status)}
+        </div>
+        ${req.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:6px">${req.description}</div>`:''}
+        <div style="font-size:11px;color:var(--text3)">
+          Requested: ${req.preferred_date||'—'} ${req.preferred_time?`(${req.preferred_time})`:''} · ${timeAgo(req.created_at)}
+        </div>
+        ${req.scheduled_date?`<div style="font-size:11px;color:var(--green);margin-top:3px">✅ Scheduled: ${req.scheduled_date} ${req.scheduled_time||''}</div>`:''}
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          ${(isSA||isAdmin)&&req.status==='PENDING'?`<button class="btn xs success" onclick="confirmSvcReq(${req.id})">✓ Confirm & Schedule</button>`:''}
+          ${(isSA||isAdmin)&&req.status==='CONFIRMED'?`<button class="btn xs success" onclick="completeSvcReq(${req.id})">✓ Mark Complete</button>`:''}
+          ${req.status==='COMPLETED'&&!req.rated?`<button class="btn xs" onclick="showRateModal(${req.id})">⭐ Rate</button>`:''}
+          ${req.status!=='CANCELLED'&&req.status!=='COMPLETED'?`<button class="btn xs danger" onclick="cancelSvcReq(${req.id})">Cancel</button>`:''}
+        </div>
+      </div>`).join('');
+    render(rows||'<div class="empty">No service requests yet</div>');
+  } catch(e){render('<div class="empty">'+e.message+'</div>');}
+}
+
+async function confirmSvcReq(rid) {
+  const date = prompt('Scheduled date (YYYY-MM-DD):');
+  const time = prompt('Scheduled time:', 'Morning (9-12)');
+  if(!date)return;
+  try{ await PUT('/services/requests/'+rid+'/confirm',{scheduled_date:date,scheduled_time:time}); toast('Appointment confirmed!'); loadServiceRequests(); }
+  catch(e){toast(e.message,'error');}
+}
+async function completeSvcReq(rid) {
+  try{ await PUT('/services/requests/'+rid+'/complete',{note:'Service completed'}); toast('Marked complete!'); loadServiceRequests(); }
+  catch(e){toast(e.message,'error');}
+}
+async function cancelSvcReq(rid) {
+  if(!confirm('Cancel this request?'))return;
+  try{ await PUT('/services/requests/'+rid+'/cancel',{reason:'Cancelled by user'}); toast('Cancelled'); loadServiceRequests(); }
+  catch(e){toast(e.message,'error');}
+}
+function showRateModal(rid) {
+  openModal('Rate this Service', `
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px">How was the service?</div>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <button class="btn success" style="font-size:28px;padding:12px 24px" onclick="submitRating(${rid},'POSITIVE')">👍</button>
+        <button class="btn danger"  style="font-size:28px;padding:12px 24px" onclick="submitRating(${rid},'NEGATIVE')">👎</button>
+      </div>
+    </div>
+    <div class="field"><label>Comment (optional)</label><textarea id="ratecomment" rows="2" placeholder="Share your experience..."></textarea></div>`);
+}
+async function submitRating(rid, type) {
+  try {
+    const r = await POST('/services/requests/'+rid+'/rate',{rating_type:type,comment:document.getElementById('ratecomment')?.value,rating_score:type==='POSITIVE'?5:1});
+    toast(r.data.message); closeModal();
+    if(r.data.auto_flagged) toast('⚠️ Provider flagged for review due to negative ratings', 'error', 5000);
+    loadServiceRequests();
+  } catch(e){toast(e.message,'error');}
+}
+
+// SUPER_ADMIN: PLATFORM HOME
+async function loadSAHome() {
+  setTitle('Platform Overview'); setActions('');
+  try {
+    const r = await GET('/superadmin/stats');
+    const s = r.data;
+    const byRole = s.users_by_role || {};
+    render(`
+      <div class="grid-4" style="margin-bottom:14px">
+        <div class="stat-card blue"><div class="stat-lbl">Total Users</div><div class="stat-val">${s.total_users}</div><div class="stat-sub">${Object.entries(byRole).map(([k,v])=>`${k.replace('_',' ')}: ${v}`).join(' · ')}</div></div>
+        <div class="stat-card green"><div class="stat-lbl">Total Revenue</div><div class="stat-val" style="font-size:16px;color:var(--green)">₹${parseFloat(s.total_payments||0).toLocaleString('en-IN')}</div><div class="stat-sub">all societies</div></div>
+        <div class="stat-card amber"><div class="stat-lbl">Open Complaints</div><div class="stat-val" style="color:var(--amber)">${s.open_complaints}</div><div class="stat-sub">platform-wide</div></div>
+        <div class="stat-card blue"><div class="stat-lbl">Total Visitors</div><div class="stat-val">${s.total_visitors}</div><div class="stat-sub">all time</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="stat-card green"><div class="stat-lbl">Societies</div><div class="stat-val">${s.total_societies}</div></div>
+        <div class="stat-card blue"><div class="stat-lbl">Total Flats</div><div class="stat-val">${s.total_flats}</div></div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-title">All Societies</div>
+        <div class="tbl-wrap" style="margin:-4px">
+          <table><thead><tr><th>Society</th><th>Flats</th><th>Revenue</th><th>Status</th><th></th></tr></thead><tbody>
+          ${(s.societies||[]).map(soc=>`<tr>
+            <td style="font-weight:700">${soc.name}<div style="font-size:10px;color:var(--text3)">${soc.city||''}</div></td>
+            <td>${soc.active_flats}</td>
+            <td style="font-weight:700;color:var(--green)">₹${parseFloat(soc.revenue||0).toLocaleString('en-IN')}</td>
+            <td>${statusBadge(soc.is_active?'APPROVED':'REJECTED')}</td>
+            <td>
+              <button class="btn xs" onclick="switchSociety(${soc.id},'${soc.name}')">Switch</button>
+              <button class="btn xs ${soc.is_active?'danger':'success'}" onclick="saToggleSociety(${soc.id},${soc.is_active})">${soc.is_active?'Disable':'Enable'}</button>
+            </td>
+          </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>
+      <div class="grid-3" style="margin-top:12px">
+        <button class="btn primary" onclick="navTo('saUsers',null)" style="padding:14px">👥 Manage Users</button>
+        <button class="btn" onclick="navTo('saSocieties',null)" style="padding:14px">🏘 Manage Societies</button>
+        <button class="btn" onclick="navTo('services',null)" style="padding:14px">🔧 Service Providers</button></div><div class="grid-3" style="margin-top:8px"><button class="btn" onclick="navTo('dashboard',null)" style="padding:14px">⊞ Admin Dashboard</button>
+      </div>
+    `);
+  } catch(e) { render('<div class="empty">Error: '+e.message+'</div>'); }
+}
+
+async function saToggleSociety(id, currently_active) {
+  if(!confirm(`${currently_active?'Disable':'Enable'} this society?`)) return;
+  try { await PUT('/superadmin/societies/'+id+'/toggle',{}); toast('Society updated'); loadSAHome(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+async function loadSAServiceStats() {
+  try {
+    const r = await GET('/services/stats');
+    const s = r.data;
+    const card = document.getElementById('sa-svc-stats');
+    if(!card) return;
+    card.innerHTML = `
+      <div class="card-title">🔧 Service Providers</div>
+      <div class="grid-4">
+        <div class="stat-card blue"><div class="stat-lbl">Total</div><div class="stat-val">${s.total}</div></div>
+        <div class="stat-card green"><div class="stat-lbl">Approved</div><div class="stat-val" style="color:var(--green)">${s.approved}</div></div>
+        <div class="stat-card amber"><div class="stat-lbl">Pending</div><div class="stat-val" style="color:var(--amber)">${s.pending}</div></div>
+        <div class="stat-card red"><div class="stat-lbl">Flagged</div><div class="stat-val" style="color:var(--red)">${s.flagged}</div></div>
+      </div>
+      ${s.pending>0?`<div style="margin-top:10px"><button class="btn sm warning" onclick="navTo('services',null)">⚠️ ${s.pending} providers need approval</button></div>`:''}
+      ${s.flagged>0?`<div style="margin-top:6px"><button class="btn sm danger" onclick="navTo('services',null)">🚫 ${s.flagged} flagged for review</button></div>`:''}`;
+  } catch(e){}
+}
+
+// SUPER_ADMIN: ALL USERS
+async function loadSAUsers() {
+  setTitle('All Users'); setActions('<button class="btn sm" onclick="loadSAUsers()">↻ Refresh</button>');
+  try {
+    const r = await GET('/superadmin/users?page=1');
+    const users = r.data||[];
+    const rows = users.map(u=>`<tr>
+      <td style="font-weight:700">${u.name||'—'}</td>
+      <td style="font-family:monospace;font-size:11px">${u.mobile}</td>
+      <td>${statusBadge(u.role)}</td>
+      <td>${u.society_name||'—'}</td>
+      <td>${statusBadge(u.is_active?'APPROVED':'REJECTED')}</td>
+      <td>
+        <select onchange="saChangeRole(${u.id},this.value)" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:5px">
+          ${['SUPER_ADMIN','SOCIETY_ADMIN','OWNER','TENANT','GUARD'].map(role=>`<option value="${role}" ${u.role===role?'selected':''}>${role.replace('_',' ')}</option>`).join('')}
+        </select>
+        <button class="btn xs ${u.is_active?'danger':'success'}" onclick="saToggleUser(${u.id},${u.is_active})" style="margin-left:4px">${u.is_active?'Disable':'Enable'}</button>
+      </td>
+    </tr>`).join('');
+    render(`
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Name</th><th>Mobile</th><th>Role</th><th>Society</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="6" class="empty">No users</td></tr>'}</tbody>
+        </table>
+      </div>
+    `);
+  } catch(e) { render('<div class="empty">'+e.message+'</div>'); }
+}
+
+async function saChangeRole(uid, role) {
+  try { await PUT('/superadmin/users/'+uid+'/role',{role}); toast('Role updated to '+role); loadSAUsers(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+async function saToggleUser(uid, currently_active) {
+  try { await PUT('/superadmin/users/'+uid+'/toggle',{}); toast(currently_active?'User disabled':'User enabled'); loadSAUsers(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+// SUPER_ADMIN: ALL SOCIETIES (same as admin societies but with extra controls)
+async function loadSASocieties() {
+  setTitle('All Societies'); setActions('<button class="btn primary sm" onclick="showAddSocietyModal()">+ Add Society</button>');
+  try {
+    const r = await GET('/societies?page=1');
+    const rows = (r.data||[]).map(s=>`<tr>
+      <td style="font-weight:700">${s.name}</td>
+      <td>${s.city||'—'}</td>
+      <td>${s.state||'—'}</td>
+      <td>${s.total_flats}</td>
+      <td>${s.maintenance_due_day}th</td>
+      <td>${statusBadge(s.is_active?'APPROVED':'REJECTED')}</td>
+      <td>
+        <button class="btn xs" onclick="switchSociety(${s.id},'${s.name}')">Switch</button>
+        <button class="btn xs" onclick="editSocietyModal(${s.id})">Edit</button>
+        <button class="btn xs ${s.is_active?'danger':'success'}" onclick="saToggleSociety(${s.id},${s.is_active})">${s.is_active?'Disable':'Enable'}</button>
+      </td>
+    </tr>`).join('');
+    render(`<div class="tbl-wrap"><table><thead><tr><th>Name</th><th>City</th><th>State</th><th>Flats</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="empty">No societies</td></tr>'}</tbody></table></div>`);
+  } catch(e) { render('<div class="empty">'+e.message+'</div>'); }
+}
+
+// ADMIN: DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadAdminDashboard() {
+  setTitle('Dashboard'); setActions('');
+  try {
+    const r=await GET('/dashboard/stats?society_id='+SOCIETY_ID);
+    const s=r.data;
+    const maxC=Math.max(...s.monthly_chart.map(m=>m.collected),1);
+    const bars=s.monthly_chart.map(m=>`<div class="bar-col"><div class="bar-fill" style="height:${Math.max(4,Math.round(m.collected/maxC*65))}px;background:var(--blue)" title="${rupees(m.collected)}"></div><div class="bar-lbl">${m.month}</div></div>`).join('');
+    render(`
+      <div class="grid-4" style="margin-bottom:14px">
+        <div class="stat-card blue"><div class="stat-lbl">Total Flats</div><div class="stat-val">${s.total_flats}</div><div class="stat-sub">${s.occupied} occupied</div></div>
+        <div class="stat-card green"><div class="stat-lbl">Collected (month)</div><div class="stat-val" style="font-size:18px;color:var(--green)">${rupees(s.collected)}</div><div class="stat-sub">${s.pending_bills} pending</div></div>
+        <div class="stat-card red"><div class="stat-lbl">Open Complaints</div><div class="stat-val" style="color:var(--red)">${s.open_complaints}</div><div class="stat-sub">need attention</div></div>
+        <div class="stat-card amber"><div class="stat-lbl">Visitors Today</div><div class="stat-val" style="color:var(--amber)">${s.visitors_today}</div><div class="stat-sub">${s.pending_visitors} pending approval</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-title">Collection – 6 months</div><div class="bar-chart">${bars}</div></div>
+        <div class="card" id="q-pending-visitors">Loading...</div>
+      </div>
+      <div class="grid-2" style="margin-top:12px">
+        <div class="card" id="q-feedback">Loading...</div>
+        <div class="card" id="q-announce">Loading...</div>
+      </div>`);
+    loadQuickVisitors(); loadQuickFeedback(); loadQuickAnnounce();
+  } catch(e){ render('<div class="empty">Error: '+e.message+'</div>'); }
+}
+
+async function loadQuickVisitors() {
+  try {
+    const r=await GET('/visitors?society_id='+SOCIETY_ID+'&page=1');
+    const vs=r.data||[];
+    const rows=vs.slice(0,5).map(v=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)"><div class="avatar" style="width:26px;height:26px;font-size:10px;background:var(--blue-lt);color:var(--blue)">${v.visitor_name[0]}</div><div style="flex:1"><div style="font-size:12px;font-weight:600">${v.visitor_name}</div><div style="font-size:11px;color:var(--text3)">Flat ${v.flat_number} · ${v.visit_type} · ${timeAgo(v.created_at)}</div></div>${statusBadge(v.status)}</div>`).join('');
+    document.getElementById('q-pending-visitors').innerHTML=`<div class="card-title">Recent Visitors <span style="font-size:11px;font-weight:400;color:var(--blue);cursor:pointer" onclick="navTo('visitors',null)">All →</span></div>${rows||'<div class="empty" style="padding:8px">None today</div>'}`;
+  } catch(e){}
+}
+async function loadQuickFeedback() {
+  try {
+    const r=await GET('/feedback?society_id='+SOCIETY_ID+'&page=1');
+    const fbs=r.data||[];
+    const rows=fbs.slice(0,4).map(f=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)"><div style="width:8px;height:8px;border-radius:50%;background:${{HIGH:'#C62828',MEDIUM:'#E65100',LOW:'#2E7D32'}[f.priority]};flex-shrink:0"></div><div style="flex:1;overflow:hidden"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.title}</div><div style="font-size:11px;color:var(--text3)">${f.category} · ${timeAgo(f.created_at)}</div></div>${statusBadge(f.status)}</div>`).join('');
+    document.getElementById('q-feedback').innerHTML=`<div class="card-title">Complaints <span style="font-size:11px;font-weight:400;color:var(--blue);cursor:pointer" onclick="navTo('feedback',null)">All →</span></div>${rows||'<div class="empty" style="padding:8px">No complaints</div>'}`;
+  } catch(e){}
+}
+async function loadQuickAnnounce() {
+  try {
+    const r=await GET('/announcements?society_id='+SOCIETY_ID+'&page=1');
+    const ans=r.data||[];
+    const rows=ans.slice(0,3).map(a=>`<div style="padding:6px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span class="badge ${{'NOTICE':'amber','EVENT':'green','EMERGENCY':'red'}[a.category]||'blue'}">${a.category}</span>${a.is_pinned?'<span class="notice-pin">📌</span>':''}<span style="font-size:10px;color:var(--text3);margin-left:auto">${a.created_at?.slice(0,10)}</span></div><div style="font-size:12px;font-weight:600">${a.title}</div></div>`).join('');
+    document.getElementById('q-announce').innerHTML=`<div class="card-title">Announcements <span style="font-size:11px;font-weight:400;color:var(--blue);cursor:pointer" onclick="navTo('announcements',null)">All →</span></div>${rows||'<div class="empty" style="padding:8px">None</div>'}`;
+  } catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN: SOCIETIES
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadSocieties() {
+  setTitle('Societies');
+  setActions('<button class="btn primary sm" onclick="showAddSocietyModal()">+ Add Society</button>');
+  try {
+    const r=await GET('/societies?page=1');
+    const rows=(r.data||[]).map(s=>`<tr><td style="font-weight:700">${s.name}</td><td>${s.city||'—'}</td><td>${s.total_flats}</td><td>${s.maintenance_due_day}th</td><td>${statusBadge(s.is_active?'APPROVED':'REJECTED')}</td><td><button class="btn sm" onclick="switchSociety(${s.id},'${s.name}')">Switch</button> <button class="btn sm" onclick="editSocietyModal(${s.id})">Edit</button></td></tr>`).join('');
+    render(`<div class="tbl-wrap"><table><thead><tr><th>Name</th><th>City</th><th>Flats</th><th>Due Day</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="empty">No societies</td></tr>'}</tbody></table></div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+function switchSociety(id,name){ SOCIETY_ID=id; localStorage.setItem('sp_sid',id); document.getElementById('sb-soc-name').textContent=name; toast('Switched to '+name); loadSocieties(); loadBadges(); }
+function showAddSocietyModal(){
+  openModal('Add Society',`<div class="field"><label>Name *</label><input id="sn" placeholder="Sunshine Heights"></div><div class="grid-2"><div class="field"><label>City</label><input id="sc" placeholder="Pune"></div><div class="field"><label>State</label><input id="ss" placeholder="Maharashtra"></div></div><div class="grid-2"><div class="field"><label>Pincode</label><input id="sp" placeholder="411045"></div><div class="field"><label>Total Flats</label><input id="stf" type="number" placeholder="120"></div></div><div class="field"><label>Maintenance Due Day</label><input id="sd" type="number" placeholder="5" min="1" max="28"></div><div class="field"><label>Address</label><textarea id="sa" rows="2" placeholder="Full address"></textarea></div><div class="field"><label>Wings (comma-separated)</label><input id="sw" placeholder="Wing A, Wing B, Wing C"></div><button class="btn primary" style="width:100%;margin-top:6px" onclick="addSociety()">Create Society</button>`);
+}
+async function addSociety(){
+  const n=document.getElementById('sn').value.trim(); if(!n){toast('Name required','error');return;}
+  const wings=document.getElementById('sw').value.split(',').map(w=>w.trim()).filter(w=>w);
+  try{ await POST('/societies',{name:n,city:document.getElementById('sc').value,state:document.getElementById('ss').value,pincode:document.getElementById('sp').value,total_flats:+document.getElementById('stf').value||0,maintenance_due_day:+document.getElementById('sd').value||5,address:document.getElementById('sa').value,wings}); toast('Society created!'); closeModal(); loadSocieties(); }
+  catch(e){toast(e.message,'error');}
+}
+async function editSocietyModal(id){
+  try{
+    const r=await GET('/societies/'+id); const s=r.data;
+    openModal('Edit Society',`<div class="field"><label>Name</label><input id="esn" value="${s.name||''}"></div><div class="grid-2"><div class="field"><label>City</label><input id="esc" value="${s.city||''}"></div><div class="field"><label>Due Day</label><input id="esd" type="number" value="${s.maintenance_due_day||5}"></div></div><button class="btn primary" style="width:100%;margin-top:6px" onclick="saveSociety(${id})">Save</button>`);
+  }catch(e){toast(e.message,'error');}
+}
+async function saveSociety(id){ try{await PUT('/societies/'+id,{name:document.getElementById('esn').value,city:document.getElementById('esc').value,maintenance_due_day:+document.getElementById('esd').value}); toast('Updated!'); closeModal(); loadSocieties();}catch(e){toast(e.message,'error');} }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN: FLATS
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadFlats() {
+  setTitle('Flats & Residents');
+  setActions('<button class="btn primary sm" onclick="showAddFlatModal()">+ Add Flat</button>');
+  try {
+    const r=await GET('/flats?society_id='+SOCIETY_ID+'&page=1');
+    const rows=(r.data||[]).map(f=>`<tr><td style="font-weight:700">${f.flat_number}</td><td>${f.wing_name||'—'}</td><td>${f.flat_type||'—'}</td><td>${f.owner_name||'<span style="color:var(--text3)">—</span>'}</td><td>${f.tenant_name||'<span style="color:var(--text3)">—</span>'}</td><td>${statusBadge(f.status)}</td><td>${rupees(f.monthly_maintenance)}</td><td><button class="btn xs" onclick="viewFlat(${f.id},'${f.flat_number}')">Manage</button></td></tr>`).join('');
+    render(`<div class="tbl-wrap"><table><thead><tr><th>Flat</th><th>Wing</th><th>Type</th><th>Owner</th><th>Tenant</th><th>Status</th><th>Maintenance</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="empty">No flats found</td></tr>'}</tbody></table></div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+async function viewFlat(id,num){
+  try{
+    const r=await GET('/flats/'+id); const f=r.data;
+    const own=(f.owners||[]).map(o=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0"><div class="avatar" style="width:26px;height:26px;font-size:10px;background:var(--blue-lt);color:var(--blue)">${(o.name||'?')[0]}</div><div style="flex:1"><div style="font-size:12px;font-weight:600">${o.name||o.mobile} ${o.is_primary?'<span class="badge blue">Primary</span>':''}</div><div style="font-size:11px;color:var(--text3)">${o.mobile}</div></div></div>`).join('');
+    const ten=(f.tenants||[]).map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0"><div class="avatar" style="width:26px;height:26px;font-size:10px;background:#F3E5F5;color:#6A1B9A">${(t.name||'?')[0]}</div><div style="flex:1"><div style="font-size:12px;font-weight:600">${t.name||t.mobile}</div><div style="font-size:11px;color:var(--text3)">${t.mobile} · Rent: ${rupees(t.monthly_rent)}</div></div></div>`).join('');
+    openModal(`Flat ${num}`,`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${statusBadge(f.status)} <span style="font-size:12px">${f.flat_type||'—'} · Floor ${f.floor||'—'} · ${f.area_sqft||'—'} sqft</span> <span style="font-size:12px;font-weight:700;margin-left:auto">${rupees(f.monthly_maintenance)}/mo</span></div><div style="font-size:12px;font-weight:700;margin-bottom:6px">Owners</div><div style="margin-bottom:10px">${own||'<div style="font-size:12px;color:var(--text3)">No owner linked</div>'}</div><button class="btn sm success" onclick="closeModal();showAddOwnerModal(${id})">+ Add Owner</button><div class="divider"></div><div style="font-size:12px;font-weight:700;margin-bottom:6px">Tenants</div><div style="margin-bottom:10px">${ten||'<div style="font-size:12px;color:var(--text3)">No tenant linked</div>'}</div><button class="btn sm warning" onclick="closeModal();showAddTenantModal(${id})">+ Add Tenant</button>`);
+  }catch(e){toast(e.message,'error');}
+}
+function showAddFlatModal(){
+  openModal('Add Flat',`<div class="field"><label>Flat Number *</label><input id="ffn" placeholder="A-501"></div><div class="grid-2"><div class="field"><label>Type</label><select id="fft"><option>1BHK</option><option selected>2BHK</option><option>3BHK</option><option>4BHK</option><option>STUDIO</option></select></div><div class="field"><label>Floor</label><input id="ffl" type="number" placeholder="5"></div></div><div class="grid-2"><div class="field"><label>Area (sqft)</label><input id="ffa" type="number" placeholder="850"></div><div class="field"><label>Maintenance (₹/mo)</label><input id="ffm" type="number" placeholder="3500"></div></div><button class="btn primary" style="width:100%;margin-top:6px" onclick="addFlat()">Add Flat</button>`);
+}
+async function addFlat(){ const fn=document.getElementById('ffn').value.trim(); if(!fn){toast('Flat number required','error');return;} try{await POST('/flats',{society_id:SOCIETY_ID,flat_number:fn,flat_type:document.getElementById('fft').value,floor:+document.getElementById('ffl').value,area_sqft:+document.getElementById('ffa').value,monthly_maintenance:+document.getElementById('ffm').value||3500}); toast('Flat added!'); closeModal(); loadFlats();}catch(e){toast(e.message,'error');} }
+function showAddOwnerModal(fid){ openModal('Add Owner',`<div class="field"><label>Mobile *</label><input id="om" placeholder="9876543210" type="tel"></div><div class="field"><label>Full Name</label><input id="on" placeholder="Owner's name"></div><div class="field"><label>Email</label><input id="oe" type="email" placeholder="email@example.com"></div><button class="btn primary" style="width:100%;margin-top:6px" onclick="addOwner(${fid})">Add Owner</button>`); }
+async function addOwner(fid){ const m=document.getElementById('om').value.replace(/\D/g,''); if(m.length<10){toast('Valid mobile required','error');return;} try{await POST('/owners',{flat_id:fid,mobile:m,name:document.getElementById('on').value,email:document.getElementById('oe').value}); toast('Owner added!'); closeModal(); loadFlats();}catch(e){toast(e.message,'error');} }
+function showAddTenantModal(fid){ openModal('Add Tenant',`<div class="field"><label>Mobile *</label><input id="tm" placeholder="9876543210" type="tel"></div><div class="field"><label>Full Name</label><input id="tn" placeholder="Tenant's name"></div><div class="grid-2"><div class="field"><label>Lease Start</label><input id="tls" type="date"></div><div class="field"><label>Lease End</label><input id="tle" type="date"></div></div><div class="field"><label>Monthly Rent (₹)</label><input id="tr" type="number" placeholder="15000"></div><button class="btn primary" style="width:100%;margin-top:6px" onclick="addTenant(${fid})">Add Tenant</button>`); }
+async function addTenant(fid){ const m=document.getElementById('tm').value.replace(/\D/g,''); if(m.length<10){toast('Valid mobile required','error');return;} try{await POST('/tenants',{flat_id:fid,mobile:m,name:document.getElementById('tn').value,lease_start:document.getElementById('tls').value,lease_end:document.getElementById('tle').value,monthly_rent:+document.getElementById('tr').value}); toast('Tenant added!'); closeModal(); loadFlats();}catch(e){toast(e.message,'error');} }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN: MAINTENANCE
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadMaintenance() {
+  setTitle('Maintenance');
+  setActions(`<button class="btn sm" onclick="genBills()">Generate Bills</button><button class="btn sm danger" onclick="applyPenalties()">Apply Penalties</button>`);
+  const month=date.today().replace(day=1).isoformat; // will use JS
+  const today=new Date(); const m=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
+  try {
+    const r=await GET(`/maintenance/bills?society_id=${SOCIETY_ID}&month=${m}&page=1`);
+    const {bills,summary}=r.data;
+    const rows=(bills||[]).map(b=>`<tr><td style="font-weight:700">${b.flat_number}</td><td>${b.wing_name||'—'}</td><td>${rupees(b.base_amount)}</td><td>${b.penalty_amount>0?`<span style="color:var(--red)">${rupees(b.penalty_amount)}</span>`:'—'}</td><td style="font-weight:700">${rupees(b.total_amount)}</td><td>${b.due_date?.slice(0,10)||'—'}</td><td>${statusBadge(b.status)}</td><td>${b.status!=='PAID'?`<button class="btn xs success" onclick="markPaid(${b.id})">Mark Paid</button>`:'—'}</td></tr>`).join('');
+    const sum=summary||{};
+    render(`<div class="grid-3" style="margin-bottom:14px"><div class="stat-card green"><div class="stat-lbl">Collected</div><div class="stat-val" style="color:var(--green)">${rupees(sum.collected)}</div></div><div class="stat-card amber"><div class="stat-lbl">Pending</div><div class="stat-val" style="color:var(--amber)">${rupees(sum.pending)}</div></div><div class="stat-card red"><div class="stat-lbl">Overdue</div><div class="stat-val" style="color:var(--red)">${rupees(sum.overdue)}</div></div></div><div class="tbl-wrap"><table><thead><tr><th>Flat</th><th>Wing</th><th>Base</th><th>Penalty</th><th>Total</th><th>Due Date</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="empty">No bills. Click Generate Bills.</td></tr>'}</tbody></table></div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+async function genBills(){ const today=new Date(); const m=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`; try{const r=await POST('/maintenance/generate',{society_id:SOCIETY_ID,month:m}); toast(`Generated ${r.data.created} bills`); loadMaintenance();}catch(e){toast(e.message,'error');} }
+async function applyPenalties(){ if(!confirm('Apply penalties to all overdue bills?'))return; try{const r=await POST('/maintenance/apply-penalties',{society_id:SOCIETY_ID}); toast(`Penalties applied to ${r.data.updated} bills`); loadMaintenance();}catch(e){toast(e.message,'error');} }
+async function markPaid(bid){ try{await POST('/maintenance/bills/'+bid+'/pay',{}); toast('Bill marked paid!'); loadMaintenance();}catch(e){toast(e.message,'error');} }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAYMENT (for Owner / Tenant / Admin)
+// ═══════════════════════════════════════════════════════════════════════════════
+function loadPayment(flatId) {
+  setTitle('Pay Maintenance');
+  setActions('');
+  PAY={step:1,plan:'MONTHLY',method:'CREDIT_CARD',flatId:flatId,upiApp:'GPay',card4:''};
+  renderPayStep();
+}
+
+function renderPayStep() {
+  const {step,plan,method}=PAY;
+  const accent=accentColor();
+  function sdot(s){ const done=stepIdx()>s; const active=stepIdx()===s; return `<div class="step-dot ${done?'done':active?'active':''}">${done?'✓':(s+1)}</div>`; }
+  function slbl(s,t){ const done=stepIdx()>s; const active=stepIdx()===s; return `<span class="step-lbl ${done?'done':active?'active':''}">${t}</span>`; }
+  function sline(s){ return `<div class="step-line ${stepIdx()>s?'done':''}"></div>`; }
+  function stepIdx(){ return ['plan','method','confirm','processing','done'].indexOf({1:'plan',2:'method',3:'confirm',4:'processing',5:'done'}[step])||step-1; }
+  const bars=`<div class="steps">${sdot(0)}${slbl(0,'Plan')}${sline(0)}${sdot(1)}${slbl(1,'Payment')}${sline(1)}${sdot(2)}${slbl(2,'Confirm')}</div>`;
+
+  const base=plan==='MONTHLY'?3500:42000;
+  const disc=plan==='YEARLY'?Math.round(base*.10):0;
+  const fee=Math.round((base-disc)*.015*100)/100;
+  const total=Math.round((base-disc+fee)*100)/100;
+
+  if(step===1){
+    render(`<div class="card" style="max-width:520px;margin:0 auto">${bars}
+      <div class="field"><label>Flat</label><select id="pay-flat" onchange="PAY.flatId=+this.value"></select></div>
+      <div class="plan-grid">
+        <div class="plan-card ${plan==='MONTHLY'?'sel':''}" onclick="PAY.plan='MONTHLY';renderPayStep()"><div class="plan-name">Monthly</div><div class="plan-amt" style="color:${accent}">₹3,500</div><div class="plan-sub">per month</div><div class="plan-chk" style="background:${accent}">✓</div></div>
+        <div class="plan-card ${plan==='YEARLY'?'sel':''}" onclick="PAY.plan='YEARLY';renderPayStep()"><div class="plan-name">Yearly</div><div class="plan-amt" style="color:${accent}">₹37,800</div><div class="plan-sub">₹3,150/mo × 12</div><div class="plan-save">Save ₹4,200</div><div class="plan-chk" style="background:${accent}">✓</div></div>
+      </div>
+      <div style="background:var(--blue-lt);border-radius:8px;padding:10px;font-size:12px;color:var(--blue);margin-bottom:14px">${plan==='YEARLY'?'🎉 Annual plan saves ₹4,200 vs monthly — 10% discount automatically applied':'📅 Monthly billing — flexible, cancel anytime'}</div>
+      <button class="pay-btn" style="background:${accent}" onclick="payGoMethod()">Continue →</button>
+    </div>`);
+    loadFlatSelector('pay-flat', PAY.flatId);
+  }
+  else if(step===2){
+    render(`<div class="card" style="max-width:520px;margin:0 auto">${bars}
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px">Select payment method</div>
+      <div class="method-grid">
+        <div class="method-btn ${method==='CREDIT_CARD'?'sel':''}" onclick="PAY.method='CREDIT_CARD';renderPayStep()"><div class="method-icon" style="background:#1a237e;color:#fff">CARD</div><div><div style="font-size:12px;font-weight:600">Credit/Debit Card</div><div style="font-size:10px;color:var(--text3)">Visa, MC, RuPay</div></div></div>
+        <div class="method-btn ${method==='UPI'?'sel':''}" onclick="PAY.method='UPI';renderPayStep()"><div class="method-icon" style="background:var(--blue-lt);color:var(--blue)">UPI</div><div><div style="font-size:12px;font-weight:600">UPI</div><div style="font-size:10px;color:var(--text3)">GPay, PhonePe, Paytm</div></div></div>
+      </div>
+      ${method==='CREDIT_CARD'?cardForm():upiForm()}
+      <button class="pay-btn" style="background:${accent}" onclick="payGoConfirm()">Review & Pay →</button>
+      <div style="text-align:center;margin-top:8px"><span style="font-size:12px;color:var(--blue);cursor:pointer" onclick="PAY.step=1;renderPayStep()">← Back</span></div>
+    </div>`);
+  }
+  else if(step===3){
+    const mDisp=method==='CREDIT_CARD'?`Card ••••${PAY.card4||'xxxx'}`:`UPI via ${PAY.upiApp}`;
+    render(`<div class="card" style="max-width:520px;margin:0 auto">${bars}
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px">Review your payment</div>
+      <div style="background:var(--bg);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--text2);margin-bottom:14px">${mDisp}</div>
+      <div class="summary-row"><span class="summary-lbl">Plan</span><span>${plan==='MONTHLY'?'Monthly':'Yearly (10% off)'}</span></div>
+      <div class="summary-row"><span class="summary-lbl">Amount</span><span>${rupees(base)}</span></div>
+      ${disc>0?`<div class="summary-row"><span class="summary-lbl">Discount (10%)</span><span style="color:var(--green)">−${rupees(disc)}</span></div>`:''}
+      <div class="summary-row"><span class="summary-lbl">Processing fee (1.5%)</span><span>₹${fee.toFixed(2)}</span></div>
+      <div class="divider"></div>
+      <div class="summary-row"><span class="summary-lbl">Total</span><span style="color:${accent};font-weight:800">${rupees(total)}</span></div>
+      <button class="pay-btn" style="background:${accent}" onclick="payProcess(${base},${disc},${fee},${total})">Pay ${rupees(total)}</button>
+      <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:8px">🔒 256-bit SSL encrypted · PCI-DSS compliant</div>
+      <div style="text-align:center;margin-top:6px"><span style="font-size:12px;color:var(--blue);cursor:pointer" onclick="PAY.step=2;renderPayStep()">← Back</span></div>
+    </div>`);
+  }
+  else if(step===4){
+    render(`<div class="card" style="max-width:520px;margin:0 auto;text-align:center;padding:40px 20px"><div class="spin"></div><div style="font-size:15px;font-weight:700">Processing payment...</div><div style="font-size:12px;color:var(--text3);margin-top:6px">Please wait, do not close this page</div></div>`);
+  }
+}
+
+function cardForm(){ return `
+  <div class="cc-preview"><div class="cc-chip"></div><div class="cc-num" id="cc-disp">•••• •••• •••• ••••</div><div class="cc-row"><div><div class="cc-lbl">Name</div><div class="cc-val" id="cc-name-disp">YOUR NAME</div></div><div><div class="cc-lbl">Expires</div><div class="cc-val" id="cc-exp-disp">MM/YY</div></div></div></div>
+  <div class="field"><label>Card Number</label><input id="cc-num" maxlength="19" placeholder="1234 5678 9012 3456" inputmode="numeric" oninput="fmtCard(this)"></div>
+  <div class="field"><label>Cardholder Name</label><input id="cc-name" placeholder="Name on card" oninput="document.getElementById('cc-name-disp').textContent=this.value.toUpperCase()||'YOUR NAME'"></div>
+  <div class="grid-2">
+    <div class="field"><label>Expiry</label><input id="cc-exp" maxlength="5" placeholder="MM/YY" oninput="fmtExp(this)"></div>
+    <div class="field"><label>CVV</label><input id="cc-cvv" type="password" maxlength="4" placeholder="•••" inputmode="numeric"></div>
+  </div>`; }
+
+function upiForm(){ const apps=['GPay','PhonePe','Paytm','BHIM']; return `
+  <div style="text-align:center;margin-bottom:12px"><div style="font-size:28px;font-weight:800;color:var(--blue)">UPI</div></div>
+  <div class="chip-row" style="justify-content:center">${apps.map(a=>`<span class="chip ${PAY.upiApp===a?'active':''}" onclick="PAY.upiApp='${a}';document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));this.classList.add('active')">${a}</span>`).join('')}</div>
+  <div class="field"><label>UPI ID</label><input id="upi-id" placeholder="name@okaxis" type="email"></div>`; }
+
+function fmtCard(el){ const v=el.value.replace(/\D/g,'').slice(0,16); el.value=v.replace(/(.{4})/g,'$1 ').trim(); const d=v.padEnd(16,'•'); const dd=document.getElementById('cc-disp'); if(dd)dd.textContent=[d.slice(0,4),d.slice(4,8),d.slice(8,12),d.slice(12)].join(' '); PAY.card4=v.slice(-4); }
+function fmtExp(el){ let v=el.value.replace(/\D/g,''); if(v.length>=2)v=v.slice(0,2)+'/'+v.slice(2,4); el.value=v; const dd=document.getElementById('cc-exp-disp'); if(dd)dd.textContent=v||'MM/YY'; }
+
+async function loadFlatSelector(elId, defaultVal) {
+  try {
+    const r=await GET('/flats?society_id='+SOCIETY_ID+'&page=1');
+    const el=document.getElementById(elId); if(!el)return;
+    el.innerHTML=(r.data||[]).map(f=>`<option value="${f.id}" ${f.id==defaultVal?'selected':''}>${f.flat_number}${f.wing_name?' ('+f.wing_name+')':''}</option>`).join('');
+    if(defaultVal) el.value=defaultVal; PAY.flatId=+el.value;
+  } catch(e){}
+}
+
+function payGoMethod(){ const sel=document.getElementById('pay-flat'); if(sel)PAY.flatId=+sel.value; if(!PAY.flatId){toast('Select a flat','error');return;} PAY.step=2; renderPayStep(); }
+function payGoConfirm(){
+  if(PAY.method==='CREDIT_CARD'){
+    const num=(document.getElementById('cc-num')?.value||'').replace(/\s/g,'');
+    if(num.length!==16){toast('Enter valid 16-digit card number','error');return;}
+    if(!(document.getElementById('cc-name')?.value||'').trim()){toast('Enter cardholder name','error');return;}
+    if(!/^\d{2}\/\d{2}$/.test(document.getElementById('cc-exp')?.value||'')){toast('Enter valid expiry MM/YY','error');return;}
+    if(!/^\d{3,4}$/.test(document.getElementById('cc-cvv')?.value||'')){toast('Enter valid CVV','error');return;}
+    PAY.card4=num.slice(-4);
+  } else {
+    if(!document.getElementById('upi-id')?.value?.includes('@')){toast('Enter valid UPI ID','error');return;}
+  }
+  PAY.step=3; renderPayStep();
+}
+
+async function payProcess(base,disc,fee,total){
+  PAY.step=4; renderPayStep();
+  const today=new Date();
+  const ps=today.toISOString().slice(0,7)+'-01';
+  const pe=PAY.plan==='MONTHLY'?today.toISOString().slice(0,7)+'-'+new Date(today.getFullYear(),today.getMonth()+1,0).getDate():today.getFullYear()+'-12-31';
+  try{
+    await new Promise(r=>setTimeout(r,2000));
+    const r=await POST('/payments/confirm',{flat_id:PAY.flatId,plan_type:PAY.plan,period_start:ps,period_end:pe,payment_method:PAY.method,upi_app:PAY.upiApp,card_last4:PAY.card4});
+    showPaySuccess(r.data,base,disc,fee,total);
+  }catch(e){toast(e.message,'error');PAY.step=3;renderPayStep();}
+}
+
+function showPaySuccess(data,base,disc,fee,total){
+  const mDisp=PAY.method==='CREDIT_CARD'?`Card ••••${PAY.card4}`:`UPI via ${PAY.upiApp}`;
+  const accent=accentColor();
+  render(`<div class="card" style="max-width:520px;margin:0 auto;text-align:center">
+    <div class="success-icon">✓</div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--green)">Payment Successful!</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Receipt saved to your account</div>
+    <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:left">
+      <div style="display:flex;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:10px">
+        <div><div style="font-size:13px;font-weight:700">SocietyPro Receipt</div><div style="font-size:10px;color:var(--text3)">${data?.receipt_number||data?.payment?.receipt_number}</div></div>
+        <div style="font-size:11px;color:var(--text3)">${new Date().toLocaleDateString('en-IN')}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--text2)">Method</span><span>${mDisp}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--text2)">Amount</span><span>${rupees(base)}</span></div>
+      ${disc>0?`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--text2)">Discount</span><span style="color:var(--green)">−${rupees(disc)}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--text2)">Processing fee</span><span>₹${fee.toFixed(2)}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0 0;font-size:15px;font-weight:800"><span>Total Paid</span><span style="color:${accent}">${rupees(total)}</span></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn" style="flex:1" onclick="loadPayHistory()">View History</button>
+      <button class="btn primary" style="flex:1;background:${accent};border-color:${accent}" onclick="navTo(ROLE==='SOCIETY_ADMIN'?'maintenance':'ownerHome',null)">Done ✓</button>
+    </div>
+  </div>`);
+}
+
+async function loadPayHistory() {
+  setTitle('Payment History'); setActions('');
+  try {
+    const r=await GET('/payments/history?page=1');
+    const rows=(r.data||[]).map(p=>`<tr><td style="font-size:10px;font-family:monospace">${p.receipt_number}</td><td>${p.flat_number||'—'}</td><td>${p.plan_type}</td><td>${p.period_start?.slice(0,10)||'—'}</td><td style="font-weight:700">${rupees(p.total_amount)}</td><td>${p.payment_method||'—'}</td><td>${statusBadge('PAID')}</td></tr>`).join('');
+    render(`<div class="tbl-wrap"><table><thead><tr><th>Receipt</th><th>Flat</th><th>Plan</th><th>Period</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="empty">No payment history</td></tr>'}</tbody></table></div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN/ALL: VISITORS
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadVisitors() {
+  setTitle('Visitors');
+  setActions('<button class="btn primary sm" onclick="showAddVisitorModal()">+ Log Visitor</button>');
+  await renderVisitorList('/visitors?society_id='+SOCIETY_ID+'&page=1', true);
+}
+async function loadMyVisitors() {
+  setTitle('My Visitors');
+  setActions('<button class="btn primary sm" onclick="showAddVisitorModal()">+ Log Visitor</button>');
+  await renderVisitorList('/visitors?page=1', false);
+}
+async function renderVisitorList(url, showFlat) {
+  try {
+    const r=await GET(url);
+    const vs=r.data||[];
+    const pending=vs.filter(v=>v.status==='PENDING');
+    const rest=vs.filter(v=>v.status!=='PENDING');
+    let html='';
+    if(pending.length) {
+      html+=`<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:8px">⚠️ Pending Approvals (${pending.length})</div>`;
+      html+=pending.map(v=>`<div class="approval-card urgent"><div style="display:flex;align-items:center;gap:10px"><div class="big-avatar">${v.visitor_name[0]}</div><div style="flex:1"><div style="font-size:13px;font-weight:700">${v.visitor_name}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${showFlat?'Flat '+v.flat_number+' · ':''}${v.visit_type} ${v.visitor_mobile?'· '+v.visitor_mobile:''}</div>${v.purpose?`<div style="font-size:11px;color:var(--text3)">${v.purpose}</div>`:''}</div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn sm success" onclick="approveVis(${v.id})">Approve</button><button class="btn sm danger" onclick="rejectVis(${v.id})">Reject</button></div></div></div>`).join('');
+      html+='</div>';
+    }
+    const rows=rest.map(v=>`<tr><td style="font-weight:600">${v.visitor_name}</td>${showFlat?`<td>${v.flat_number}</td>`:''}<td>${v.visit_type}</td><td>${v.visitor_mobile||'—'}</td><td>${v.purpose||'—'}</td><td>${v.entry_time?.slice(11,16)||'—'}</td><td>${v.exit_time?.slice(11,16)||'—'}</td><td>${statusBadge(v.status)}</td><td>${v.status==='APPROVED'||v.status==='INSIDE'?`<button class="btn xs" onclick="exitVis(${v.id})">Log Exit</button>`:'—'}</td></tr>`).join('');
+    html+=`<div class="tbl-wrap"><table><thead><tr><th>Visitor</th>${showFlat?'<th>Flat</th>':''}<th>Type</th><th>Mobile</th><th>Purpose</th><th>Entry</th><th>Exit</th><th>Status</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="${showFlat?9:8}" class="empty">No visitors today</td></tr>`}</tbody></table></div>`;
+    render(html);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+async function approveVis(id){ try{await PUT('/visitors/'+id+'/approve'); toast('Visitor approved!'); loadBadges(); navTo(ROLE==='GUARD'?'guardVisitors':(ROLE==='SOCIETY_ADMIN'||ROLE==='SUPER_ADMIN')?'visitors':'ownerVisitors',null);}catch(e){toast(e.message,'error');} }
+async function rejectVis(id){ try{await PUT('/visitors/'+id+'/reject'); toast('Visitor rejected'); loadBadges(); navTo(ROLE==='GUARD'?'guardVisitors':(ROLE==='SOCIETY_ADMIN'||ROLE==='SUPER_ADMIN')?'visitors':'ownerVisitors',null);}catch(e){toast(e.message,'error');} }
+async function exitVis(id){ try{await PUT('/visitors/'+id+'/exit'); toast('Exit recorded'); navTo(ROLE==='GUARD'?'guardVisitors':(ROLE==='SOCIETY_ADMIN'||ROLE==='SUPER_ADMIN')?'visitors':'ownerVisitors',null);}catch(e){toast(e.message,'error');} }
+function showAddVisitorModal(){
+  openModal('Log New Visitor',`<div class="field"><label>Visitor Name *</label><input id="vn" placeholder="Full name"></div><div class="grid-2"><div class="field"><label>Mobile</label><input id="vm" placeholder="9876543210" type="tel"></div><div class="field"><label>Vehicle No.</label><input id="vv" placeholder="MH 12 AB 3456"></div></div><div class="field"><label>Visit Type</label><select id="vt"><option>GUEST</option><option>DELIVERY</option><option>VENDOR</option><option>CAB</option><option>STAFF</option></select></div>${ROLE!=='OWNER'&&ROLE!=='TENANT'?'<div class="field"><label>Flat *</label><select id="vf"></select></div>':''}<div class="field"><label>Purpose</label><input id="vp" placeholder="Reason for visit"></div><button class="btn primary" style="width:100%;margin-top:6px" onclick="addVisitor()">Log Visitor</button>`);
+  if(ROLE!=='OWNER'&&ROLE!=='TENANT') loadFlatSelector('vf', null);
+}
+async function addVisitor(){ const n=document.getElementById('vn').value.trim(); if(!n){toast('Visitor name required','error');return;} const fid=document.getElementById('vf')?.value; try{await POST('/visitors',{visitor_name:n,visitor_mobile:document.getElementById('vm').value,vehicle_number:document.getElementById('vv').value,visit_type:document.getElementById('vt').value,purpose:document.getElementById('vp').value,flat_id:fid?+fid:undefined,society_id:SOCIETY_ID}); toast('Visitor logged!'); closeModal(); navTo(ROLE==='GUARD'?'guardVisitors':ROLE==='SOCIETY_ADMIN'?'visitors':'ownerVisitors',null); loadBadges();}catch(e){toast(e.message,'error');} }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GUARDS
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadGuards() {
+  setTitle('Guard Roster');
+  setActions('<button class="btn primary sm" onclick="showAddGuardModal()">+ Add Guard</button>');
+  try {
+    const r=await GET('/guards?society_id='+SOCIETY_ID);
+    const rows=(r.data||[]).map(g=>`<tr><td style="font-weight:600">${g.name||'—'}</td><td>${g.mobile||'—'}</td><td>${g.employee_id||'—'}</td><td>${statusBadge(g.shift)}</td><td>${g.gate_assigned||'—'}</td><td>${statusBadge(g.is_active?'APPROVED':'REJECTED')}</td><td><button class="btn xs danger" onclick="removeGuard(${g.id})">Remove</button></td></tr>`).join('');
+    render(`<div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Mobile</th><th>Emp ID</th><th>Shift</th><th>Gate</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="empty">No guards registered</td></tr>'}</tbody></table></div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+function showAddGuardModal(){ openModal('Add Guard',`<div class="field"><label>Mobile *</label><input id="gm" placeholder="9876543210" type="tel"></div><div class="field"><label>Name</label><input id="gn" placeholder="Guard's name"></div><div class="grid-2"><div class="field"><label>Employee ID</label><input id="ge" placeholder="GRD-005"></div><div class="field"><label>Shift</label><select id="gs"><option>MORNING</option><option>AFTERNOON</option><option>NIGHT</option></select></div></div><div class="field"><label>Gate Assigned</label><input id="gg" placeholder="Main Gate"></div><button class="btn primary" style="width:100%;margin-top:6px" onclick="addGuard()">Add Guard</button>`); }
+async function addGuard(){ const m=document.getElementById('gm').value.replace(/\D/g,''); if(m.length<10){toast('Valid mobile required','error');return;} try{await POST('/guards',{society_id:SOCIETY_ID,mobile:m,name:document.getElementById('gn').value,employee_id:document.getElementById('ge').value,shift:document.getElementById('gs').value,gate_assigned:document.getElementById('gg').value}); toast('Guard added!'); closeModal(); loadGuards();}catch(e){toast(e.message,'error');} }
+async function removeGuard(id){ if(!confirm('Remove this guard?'))return; try{await PUT('/guards/'+id,{is_active:0}); toast('Guard removed'); loadGuards();}catch(e){toast(e.message,'error');} }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FEEDBACK
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadFeedback() {
+  setTitle('Feedback & Complaints');
+  setActions('<button class="btn primary sm" onclick="showAddFeedbackModal()">+ New Complaint</button>');
+  await renderFeedbackList('/feedback?society_id='+SOCIETY_ID+'&page=1', true);
+}
+async function loadMyFeedback() {
+  setTitle('My Complaints');
+  setActions('<button class="btn primary sm" onclick="showAddFeedbackModal()">+ New Complaint</button>');
+  await renderFeedbackList('/feedback?page=1', false);
+}
+async function renderFeedbackList(url, isAdmin) {
+  try {
+    const r=await GET(url);
+    const rows=(r.data||[]).map(fb=>`<tr><td>#${fb.id}</td><td>${fb.category||'OTHER'}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fb.title}</td><td>${fb.flat_number||fb.submitted_by_name||'—'}</td><td>${priBadge(fb.priority)}</td><td>${statusBadge(fb.status)}</td><td>${isAdmin?`<select onchange="updateFbStatus(${fb.id},this.value)" style="font-size:11px;padding:3px;border:1px solid var(--border);border-radius:4px"><option ${fb.status==='OPEN'?'selected':''}>OPEN</option><option ${fb.status==='IN_PROGRESS'?'selected':''}>IN_PROGRESS</option><option ${fb.status==='RESOLVED'?'selected':''}>RESOLVED</option><option ${fb.status==='CLOSED'?'selected':''}>CLOSED</option></select>`:statusBadge(fb.status)}</td><td>${timeAgo(fb.created_at)}</td></tr>`).join('');
+    render(`<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Category</th><th>Title</th><th>By/Flat</th><th>Priority</th><th>Status</th><th>Update</th><th>Time</th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="empty">No complaints found</td></tr>'}</tbody></table></div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+async function updateFbStatus(id,status){ try{await PUT('/feedback/'+id,{status}); toast('Status updated'); loadBadges();}catch(e){toast(e.message,'error');} }
+function showAddFeedbackModal(){ openModal('New Complaint',`<div class="field"><label>Category</label><select id="fbc"><option>WATER</option><option>ELECTRICITY</option><option>LIFT</option><option>CLEANLINESS</option><option>PARKING</option><option>SECURITY</option><option>NOISE</option><option>OTHER</option></select></div><div class="field"><label>Title *</label><input id="fbt" placeholder="Brief description of the issue"></div><div class="field"><label>Details</label><textarea id="fbd" rows="3" placeholder="More details..."></textarea></div><div class="field"><label>Priority</label><select id="fbp"><option>LOW</option><option selected>MEDIUM</option><option>HIGH</option><option>URGENT</option></select></div><button class="btn primary" style="width:100%;margin-top:6px" onclick="addFeedback()">Submit Complaint</button>`); }
+async function addFeedback(){ const t=document.getElementById('fbt').value.trim(); if(!t){toast('Title required','error');return;} try{await POST('/feedback',{society_id:SOCIETY_ID,category:document.getElementById('fbc').value,title:t,description:document.getElementById('fbd').value,priority:document.getElementById('fbp').value}); toast('Complaint submitted!'); closeModal(); if(ROLE==='SOCIETY_ADMIN')loadFeedback(); else loadMyFeedback(); loadBadges();}catch(e){toast(e.message,'error');} }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANNOUNCEMENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadAnnouncements() {
+  setTitle('Announcements');
+  setActions('<button class="btn primary sm" onclick="showAddAnnounceModal()">+ Post</button>');
+  await renderAnnounceList(true);
+}
+async function loadMyAnnounce() {
+  setTitle('Notices & Announcements');
+  setActions('');
+  await renderAnnounceList(false);
+}
+async function renderAnnounceList(isAdmin) {
+  try {
+    const r=await GET('/announcements?society_id='+SOCIETY_ID+'&page=1');
+    const html=(r.data||[]).map(a=>`<div class="notice-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="badge ${{ NOTICE:'amber',EVENT:'green',EMERGENCY:'red',GENERAL:'blue',MAINTENANCE:'gray'}[a.category]||'blue'}">${a.category}</span>${a.is_pinned?'<span class="notice-pin">📌 Pinned</span>':''}<span style="font-size:10px;color:var(--text3);margin-left:auto">${a.created_at?.slice(0,10)||'—'}</span>${isAdmin?`<button class="btn xs danger" onclick="deleteAnnounce(${a.id})">Delete</button>`:''}</div><div style="font-size:14px;font-weight:700;margin-bottom:4px">${a.title}</div><div style="font-size:12px;color:var(--text2);line-height:1.5">${a.content||''}</div><div style="font-size:11px;color:var(--text3);margin-top:8px">By: ${a.published_by_name||'Admin'}</div></div>`).join('');
+    render(html||'<div class="empty">No announcements yet</div>');
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+function showAddAnnounceModal(){ openModal('Post Announcement',`<div class="field"><label>Title *</label><input id="ant" placeholder="Announcement title"></div><div class="field"><label>Content</label><textarea id="anc" rows="4" placeholder="Announcement details..."></textarea></div><div class="grid-2"><div class="field"><label>Category</label><select id="ank"><option>GENERAL</option><option>NOTICE</option><option>EVENT</option><option>EMERGENCY</option><option>MAINTENANCE</option></select></div><div class="field"><label>Pin to top?</label><select id="anp"><option value="false">No</option><option value="true">Yes</option></select></div></div><button class="btn primary" style="width:100%;margin-top:6px" onclick="addAnnounce()">Post</button>`); }
+async function addAnnounce(){ const t=document.getElementById('ant').value.trim(); if(!t){toast('Title required','error');return;} try{await POST('/announcements',{society_id:SOCIETY_ID,title:t,content:document.getElementById('anc').value,category:document.getElementById('ank').value,is_pinned:document.getElementById('anp').value==='true'}); toast('Posted!'); closeModal(); loadAnnouncements();}catch(e){toast(e.message,'error');} }
+async function deleteAnnounce(id){ if(!confirm('Delete this announcement?'))return; try{await DEL('/announcements/'+id); toast('Deleted'); loadAnnouncements();}catch(e){toast(e.message,'error');} }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BANK ACCOUNT
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadBank() {
+  setTitle('Bank Account'); setActions('');
+  try {
+    const r=await GET('/bank/'+SOCIETY_ID);
+    const b=r.data;
+    render(`<div class="card" style="max-width:560px">
+      ${b?`<div style="background:var(--green-lt);border:1px solid #c8e6c9;border-radius:10px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:12px"><div class="avatar" style="width:40px;height:40px;border-radius:8px;background:var(--green);font-size:11px">${(b.bank_name||'BNK').slice(0,4)}</div><div style="flex:1"><div style="font-weight:700">${b.bank_name||'Bank'} — ${b.account_type}</div><div style="font-size:12px;color:var(--green)">A/C ${b.account_number_masked} · IFSC: ${b.ifsc_code}</div><div style="font-size:11px;color:var(--green)">${b.account_holder}</div></div><span class="badge green">✓ Verified</span></div>`:`<div style="background:var(--amber-lt);border:1px solid #ffe0b2;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--amber)">⚠️ No bank account linked. Payments collected from residents cannot be settled without a bank account.</div>`}
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">${b?'Update':'Link'} Bank Account</div>
+      <div style="background:var(--blue-lt);border-radius:8px;padding:10px;font-size:12px;color:var(--blue);margin-bottom:14px">ℹ️ All maintenance payments are settled to this account. Only Society Admin can add/update. Account number must be entered twice for verification.</div>
+      <div class="field"><label>Account Holder Name *</label><input id="bah" placeholder="Society CHS full name" value="${b?.account_holder||''}"></div>
+      <div class="grid-2"><div class="field"><label>Account Number *</label><input id="ban" type="password" placeholder="Enter account number"></div><div class="field"><label>Confirm Account Number *</label><input id="banc" placeholder="Re-enter number"></div></div>
+      <div class="grid-2"><div class="field"><label>IFSC Code *</label><input id="bif" placeholder="HDFC0002341" style="text-transform:uppercase" value="${b?.ifsc_code||''}" oninput="this.value=this.value.toUpperCase()"></div><div class="field"><label>Bank Name</label><input id="bbn" placeholder="HDFC Bank" value="${b?.bank_name||''}"></div></div>
+      <div class="field"><label>Account Type</label><select id="bat"><option ${b?.account_type==='SAVINGS'?'selected':''}>SAVINGS</option><option ${b?.account_type==='CURRENT'?'selected':''}>CURRENT</option></select></div>
+      <button class="btn primary" onclick="saveBank()">${b?'Update Account':'Link Account'}</button>
+    </div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+async function saveBank(){
+  const ah=document.getElementById('bah')?.value.trim(); const an=document.getElementById('ban')?.value.trim(); const anc=document.getElementById('banc')?.value.trim(); const ifc=document.getElementById('bif')?.value.trim().toUpperCase();
+  if(!ah||!an||!ifc){toast('Account holder, number and IFSC required','error');return;}
+  if(an!==anc){toast('Account numbers do not match','error');return;}
+  if(!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifc)){toast('Invalid IFSC (e.g. HDFC0002341)','error');return;}
+  if(an.length<8){toast('Account number must be at least 8 digits','error');return;}
+  try{await POST('/bank',{society_id:SOCIETY_ID,account_holder:ah,account_number:an,confirm_account_number:anc,ifsc_code:ifc,bank_name:document.getElementById('bbn').value,account_type:document.getElementById('bat').value}); toast('Bank account saved & verified!'); loadBank();}catch(e){toast(e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OWNER HOME
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadOwnerHome() {
+  setTitle('My Flat'); setActions('');
+  try {
+    const r=await GET('/dashboard/stats?society_id='+SOCIETY_ID);
+    const s=r.data;
+    const flat=s.flat||ME.flat;
+    if(!flat){render('<div class="empty">No flat assigned. Contact your society admin.</div>');return;}
+    const bills=(s.bills||[]).slice(0,3);
+    const billRows=bills.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><div><div style="font-size:12px;font-weight:600">${b.bill_month?.slice(0,7)}</div><div style="font-size:11px;color:var(--text3)">${rupees(b.total_amount)}</div></div>${statusBadge(b.status)}</div>`).join('');
+    render(`<div class="grid-2" style="margin-bottom:14px">
+      <div class="card"><div class="card-title">My Flat</div>
+        <div style="font-size:28px;font-weight:800;color:var(--owner-accent);margin-bottom:4px">${flat.flat_number}</div>
+        <div style="font-size:13px;color:var(--text2)">${flat.flat_type||'—'} · Wing: ${flat.wing_name||'—'}</div>
+        <div style="font-size:13px;color:var(--text2)">Floor ${flat.floor||'—'} · ${flat.area_sqft||'—'} sqft</div>
+        <div style="margin-top:10px">${statusBadge(flat.status)}</div>
+        <div style="font-size:13px;font-weight:700;margin-top:10px;color:var(--owner-accent)">${rupees(flat.monthly_maintenance)}<span style="font-size:11px;font-weight:400;color:var(--text3)">/month</span></div>
+      </div>
+      <div class="card"><div class="card-title">Quick Actions</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn success" onclick="navTo('ownerPay',null)" style="text-align:left">💳 Pay Maintenance</button>
+          <button class="btn" onclick="navTo('ownerVisitors',null)" style="text-align:left">👤 Manage Visitors ${s.pending_visitors>0?`<span class="badge red">${s.pending_visitors}</span>`:''}</button>
+          <button class="btn" onclick="navTo('ownerFeedback',null)" style="text-align:left">💬 My Complaints</button>
+          <button class="btn" onclick="navTo('ownerAnnounce',null)" style="text-align:left">📢 Notices</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Recent Bills ${s.pending_bills>0?`<span class="badge red">${s.pending_bills} pending</span>`:''}</div>${billRows||'<div class="empty" style="padding:8px">No bills yet</div>'}<div style="margin-top:10px"><button class="btn sm primary" onclick="navTo('ownerPay',null)">Pay Now</button></div></div>
+      <div class="card"><div class="card-title">Today's Visitors</div>${(s.visitors_today||[]).slice(0,4).map(v=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)"><div class="avatar" style="width:24px;height:24px;font-size:10px;background:var(--blue-lt);color:var(--blue)">${v.visitor_name[0]}</div><div style="flex:1"><div style="font-size:12px;font-weight:600">${v.visitor_name}</div><div style="font-size:11px;color:var(--text3)">${v.visit_type}</div></div>${statusBadge(v.status)}</div>`).join('')||'<div class="empty" style="padding:8px">No visitors today</div>'}</div>
+    </div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TENANT HOME
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadTenantHome() {
+  setTitle('My Home'); setActions('');
+  try {
+    const r=await GET('/dashboard/stats?society_id='+SOCIETY_ID);
+    const s=r.data; const flat=s.flat||ME.flat;
+    if(!flat){render('<div class="empty">No flat assigned. Contact your landlord or society admin.</div>');return;}
+    render(`<div class="grid-2" style="margin-bottom:14px">
+      <div class="card"><div class="card-title">My Flat</div>
+        <div style="font-size:28px;font-weight:800;color:var(--tenant-accent);margin-bottom:4px">${flat.flat_number}</div>
+        <div style="font-size:13px;color:var(--text2)">${flat.flat_type||'—'} · Wing: ${flat.wing_name||'—'}</div>
+        <div style="font-size:13px;color:var(--text2)">Floor ${flat.floor||'—'} · ${flat.area_sqft||'—'} sqft</div>
+        <div style="margin-top:8px">${statusBadge(flat.status)}</div>
+        <div style="font-size:13px;font-weight:700;margin-top:10px;color:var(--tenant-accent)">${rupees(flat.monthly_maintenance)}<span style="font-size:11px;font-weight:400;color:var(--text3)">/month maintenance</span></div>
+      </div>
+      <div class="card"><div class="card-title">Quick Actions</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn" style="background:var(--tenant-accent);color:#fff;border:none" onclick="navTo('tenantPay',null)">💳 Pay Maintenance</button>
+          <button class="btn" onclick="navTo('tenantVisitors',null)">👤 My Visitors ${s.pending_visitors>0?`<span class="badge red">${s.pending_visitors}</span>`:''}</button>
+          <button class="btn" onclick="navTo('tenantFeedback',null)">💬 Submit Complaint</button>
+          <button class="btn" onclick="navTo('tenantAnnounce',null)">📢 Society Notices</button>
+        </div>
+      </div>
+    </div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GUARD SCREENS
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadGuardDashboard() {
+  setTitle('Guard Dashboard'); setActions('');
+  try {
+    const r=await GET('/dashboard/stats?society_id='+SOCIETY_ID);
+    const s=r.data;
+    render(`<div class="grid-3" style="margin-bottom:14px">
+      <div class="stat-card amber"><div class="stat-lbl">Pending Approval</div><div class="stat-val" style="color:var(--amber)">${s.pending_count||0}</div><div class="stat-sub">awaiting your action</div></div>
+      <div class="stat-card green"><div class="stat-lbl">Inside Now</div><div class="stat-val" style="color:var(--green)">${s.inside_count||0}</div><div class="stat-sub">currently inside</div></div>
+      <div class="stat-card blue"><div class="stat-lbl">Total Today</div><div class="stat-val">${s.visitors_today||0}</div><div class="stat-sub">all entries</div></div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">Pending Approvals</div>
+      ${(s.pending_visitors||[]).slice(0,5).map(v=>`<div class="approval-card urgent"><div style="display:flex;align-items:center;gap:10px"><div class="big-avatar">${v.visitor_name[0]}</div><div style="flex:1"><div style="font-size:13px;font-weight:700">${v.visitor_name}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Flat ${v.flat_number} · ${v.visit_type} ${v.visitor_mobile?'· '+v.visitor_mobile:''}</div>${v.purpose?`<div style="font-size:11px;color:var(--text3)">${v.purpose}</div>`:''}</div><div style="display:flex;gap:6px"><button class="btn sm success" onclick="approveVis(${v.id})">✓ Allow</button><button class="btn sm danger" onclick="rejectVis(${v.id})">✗ Deny</button></div></div></div>`).join('')||'<div class="empty" style="padding:8px">No pending approvals</div>'}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn primary" style="padding:14px;font-size:14px" onclick="navTo('guardVisitors',null)">📋 All Visitors</button>
+      <button class="btn warning" style="padding:14px;font-size:14px" onclick="navTo('guardLog',null)">➕ Log Visitor</button>
+    </div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+
+async function loadGuardVisitors() {
+  setTitle('Visitor Management');
+  setActions('<button class="btn primary sm" onclick="navTo(\'guardLog\',null)">+ Log Visitor</button>');
+  await renderVisitorList('/visitors?page=1', true);
+}
+
+async function loadGuardLog() {
+  setTitle('Log New Visitor'); setActions('');
+  try {
+    const r=await GET('/flats?society_id='+SOCIETY_ID+'&page=1');
+    const flats=r.data||[];
+    render(`<div class="card" style="max-width:500px;margin:0 auto">
+      <div style="font-size:13px;font-weight:700;margin-bottom:14px">👤 New Visitor Entry</div>
+      <div class="field"><label>Visitor Name *</label><input id="gvn" placeholder="Full name"></div>
+      <div class="grid-2"><div class="field"><label>Mobile</label><input id="gvm" placeholder="9876543210" type="tel"></div><div class="field"><label>Vehicle No.</label><input id="gvv" placeholder="MH 12 AB 1234"></div></div>
+      <div class="field"><label>Visiting Flat *</label>
+        <select id="gvf">${flats.map(f=>`<option value="${f.id}">${f.flat_number} (${f.wing_name||''})</option>`).join('')}</select></div>
+      <div class="field"><label>Visit Type</label>
+        <select id="gvt"><option>GUEST</option><option>DELIVERY</option><option>VENDOR</option><option>CAB</option><option>STAFF</option></select></div>
+      <div class="field"><label>Purpose</label><input id="gvp" placeholder="Reason for visit"></div>
+      <button class="btn primary" style="width:100%;padding:13px;font-size:14px;background:var(--guard-accent);border-color:var(--guard-accent)" onclick="guardLogVisitor()">📝 Log & Send for Approval</button>
+    </div>`);
+  } catch(e){ render('<div class="empty">'+e.message+'</div>'); }
+}
+
+async function guardLogVisitor(){
+  const n=document.getElementById('gvn')?.value.trim(); const f=document.getElementById('gvf')?.value;
+  if(!n){toast('Visitor name required','error');return;}
+  if(!f){toast('Select a flat','error');return;}
+  try{
+    await POST('/visitors',{visitor_name:n,visitor_mobile:document.getElementById('gvm')?.value,vehicle_number:document.getElementById('gvv')?.value,flat_id:+f,visit_type:document.getElementById('gvt')?.value,purpose:document.getElementById('gvp')?.value,society_id:SOCIETY_ID});
+    toast('Visitor logged — waiting for resident approval');
+    navTo('guardVisitors',null); loadBadges();
+  }catch(e){toast(e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PROFILE MODAL
+// ═══════════════════════════════════════════════════════════════════════════════
+function showProfile(){
+  const roleColors={SOCIETY_ADMIN:'var(--admin-accent)',OWNER:'var(--owner-accent)',TENANT:'var(--tenant-accent)',GUARD:'var(--guard-accent)'};
+  const roleName={SOCIETY_ADMIN:'Society Admin',OWNER:'Flat Owner',TENANT:'Tenant',GUARD:'Security Guard'};
+  openModal('My Profile',`<div style="text-align:center;margin-bottom:16px">
+    <div class="avatar" style="width:56px;height:56px;font-size:22px;margin:0 auto 8px;background:${roleColors[ROLE]||'var(--blue)'}">${(ME?.name||'?')[0]}</div>
+    <div style="font-size:16px;font-weight:700">${ME?.name||'—'}</div>
+    <div style="font-size:12px;color:var(--text3)">${ME?.mobile}</div>
+    <span class="badge blue" style="margin-top:6px">${roleName[ROLE]||ROLE}</span>
+    ${ME?.flat?`<div style="font-size:12px;color:var(--text2);margin-top:8px">Flat <b>${ME.flat.flat_number}</b> · ${ME.flat.wing_name||''}</div>`:''}
+    ${ME?.guard_info?`<div style="font-size:12px;color:var(--text2);margin-top:8px">Gate: ${ME.guard_info.gate_assigned||'—'} · Shift: ${ME.guard_info.shift}</div>`:''}
+  </div>
+  <div class="field"><label>Full Name</label><input id="pn" value="${ME?.name||''}"></div>
+  <div class="field"><label>Email</label><input id="pe" value="${ME?.email||''}" type="email"></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn primary" style="flex:1" onclick="updateProfile()">Save</button>
+    <button class="btn danger" onclick="logout()">Logout</button>
+  </div>`);
+}
+async function updateProfile(){
+  try{const r=await PUT('/auth/profile',{name:document.getElementById('pn').value,email:document.getElementById('pe').value}); ME={...ME,...r.data}; document.getElementById('sb-nm').textContent=ME.name||ME.mobile; toast('Profile updated!'); closeModal();}catch(e){toast(e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPENSES MODULE
+// ═══════════════════════════════════════════════════════════════════════════════
+const EXP_ICONS = {WATER:'💧',ELECTRICITY:'⚡',LIFT_AMC:'🛗',SECURITY:'🛡',CLEANING:'🧹',GARDENING:'🌿',PEST_CONTROL:'🪲',REPAIRS:'🔧',INSURANCE:'🔒',INTERNET:'📡',SALARY:'👷',LEGAL:'⚖️',EVENTS:'🎉',MISCELLANEOUS:'📦'};
+const EXP_COLORS= {WATER:'#1565C0',ELECTRICITY:'#F57F17',LIFT_AMC:'#6A1B9A',SECURITY:'#B71C1C',CLEANING:'#00695C',GARDENING:'#2E7D32',PEST_CONTROL:'#4E342E',REPAIRS:'#37474F',INSURANCE:'#1A237E',INTERNET:'#0277BD',SALARY:'#E65100',LEGAL:'#880E4F',EVENTS:'#AD1457',MISCELLANEOUS:'#546E7A'};
+
+async function loadExpenses() {
+  setTitle('Monthly Expenses');
+  setActions('<button class="btn primary sm" onclick="showAddExpenseModal()">+ Add Expense</button>');
+  const today = new Date();
+  const defMonth = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
+
+  try {
+    const [r, sumR] = await Promise.all([
+      GET(`/expenses?society_id=${SOCIETY_ID}&month=${defMonth}`),
+      GET(`/expenses/summary?society_id=${SOCIETY_ID}`)
+    ]);
+    const {expenses, summary} = r.data;
+    const trend = sumR.data.monthly_trend || [];
+    const ytd   = sumR.data.ytd_total || 0;
+
+    // Bar chart max
+    const maxT = Math.max(...trend.map(m=>m.total), 1);
+
+    const trendBars = trend.map(m=>`
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="font-size:10px;color:var(--text3);font-weight:700">₹${(m.total/1000).toFixed(1)}k</div>
+        <div style="width:100%;background:var(--bg);border-radius:3px;height:60px;display:flex;align-items:flex-end">
+          <div style="width:100%;height:${Math.max(4,Math.round(m.total/maxT*56))}px;background:var(--blue);border-radius:3px;transition:height .4s"></div>
+        </div>
+        <div style="font-size:9px;color:var(--text3)">${m.month.split(' ')[0]}</div>
+      </div>`).join('');
+
+    // Category breakdown
+    const byCat = summary.by_category || {};
+    const catRows = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div class="exp-cat-icon" style="background:${EXP_COLORS[cat]||'#546E7A'}22">${EXP_ICONS[cat]||'📦'}</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600">${cat.replace(/_/g,' ')}</div>
+          <div style="background:var(--border);border-radius:3px;height:4px;margin-top:4px">
+            <div style="width:${Math.round(amt/summary.total*100)}%;height:4px;background:${EXP_COLORS[cat]||'var(--blue)'};border-radius:3px"></div>
+          </div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:${EXP_COLORS[cat]||'var(--text)'}">${rupees(amt)}</div>
+      </div>`).join('');
+
+    // Month picker
+    const months=[];
+    for(let i=0;i<12;i++){
+      const d=new Date(today.getFullYear(),today.getMonth()-i,1);
+      months.push(`<option value="${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01" ${i===0?'selected':''}>${d.toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</option>`);
+    }
+
+    // Expense rows
+    const rows = (expenses||[]).map(e=>`
+      <tr>
+        <td><span style="font-size:18px">${EXP_ICONS[e.category]||'📦'}</span></td>
+        <td><div style="font-size:13px;font-weight:600">${e.title}</div><div style="font-size:11px;color:var(--text3)">${e.category.replace(/_/g,' ')}${e.vendor?' · '+e.vendor:''}</div></td>
+        <td><span class="badge gray">${e.payment_mode}</span></td>
+        <td style="font-size:11px;color:var(--text3)">${e.invoice_number||'—'}</td>
+        <td style="font-weight:700;color:var(--red)">${rupees(e.amount)}</td>
+        <td style="font-size:11px;color:var(--text3)">${e.added_by_name||'—'}</td>
+        <td>
+          <button class="btn xs danger" onclick="deleteExpense(${e.id})">Delete</button>
+        </td>
+      </tr>`).join('');
+
+    render(`
+      <div class="grid-3" style="margin-bottom:14px">
+        <div class="stat-card red"><div class="stat-lbl">This Month</div><div class="stat-val" style="color:var(--red)">${rupees(summary.total||0)}</div><div class="stat-sub">${summary.count||0} entries</div></div>
+        <div class="stat-card amber"><div class="stat-lbl">Year to Date</div><div class="stat-val" style="color:var(--amber)">${rupees(ytd)}</div></div>
+        <div class="stat-card blue"><div class="stat-lbl">Categories Used</div><div class="stat-val">${Object.keys(byCat).length}</div></div>
+      </div>
+      <div class="grid-2" style="margin-bottom:14px">
+        <div class="card"><div class="card-title">6-Month Trend</div><div style="display:flex;gap:6px;align-items:flex-end;height:90px;padding-top:12px">${trendBars}</div></div>
+        <div class="card"><div class="card-title">By Category</div>${catRows||'<div class="empty" style="padding:8px">No expenses this month</div>'}</div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          Expenses for
+          <select onchange="reloadExpenses(this.value)" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;margin-left:8px">${months}</select>
+        </div>
+        <div class="tbl-wrap" style="margin:-4px">
+          <table><thead><tr><th></th><th>Title</th><th>Mode</th><th>Invoice</th><th>Amount</th><th>Added By</th><th></th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="7" class="empty">No expenses for this month. Click + Add Expense.</td></tr>'}</tbody>
+          </table>
+        </div>
+        ${summary.total>0?`<div style="text-align:right;padding:10px 14px;font-size:14px;font-weight:700;border-top:1px solid var(--border)">Total: <span style="color:var(--red)">${rupees(summary.total)}</span></div>`:''}
+      </div>`);
+  } catch(e) { render('<div class="empty">'+e.message+'</div>'); }
+}
+
+async function reloadExpenses(month) {
+  const [r, sumR] = await Promise.all([
+    GET(`/expenses?society_id=${SOCIETY_ID}&month=${month}`),
+    GET(`/expenses/summary?society_id=${SOCIETY_ID}`)
+  ]);
+  // Just re-render the table portion
+  const {expenses, summary} = r.data;
+  const rows = (expenses||[]).map(e=>`
+    <tr>
+      <td><span style="font-size:18px">${EXP_ICONS[e.category]||'📦'}</span></td>
+      <td><div style="font-size:13px;font-weight:600">${e.title}</div><div style="font-size:11px;color:var(--text3)">${e.category.replace(/_/g,' ')}${e.vendor?' · '+e.vendor:''}</div></td>
+      <td><span class="badge gray">${e.payment_mode}</span></td>
+      <td style="font-size:11px;color:var(--text3)">${e.invoice_number||'—'}</td>
+      <td style="font-weight:700;color:var(--red)">${rupees(e.amount)}</td>
+      <td style="font-size:11px;color:var(--text3)">${e.added_by_name||'—'}</td>
+      <td><button class="btn xs danger" onclick="deleteExpense(${e.id})">Delete</button></td>
+    </tr>`).join('');
+  const tbody = document.querySelector('#content tbody');
+  if(tbody) tbody.innerHTML = rows||'<tr><td colspan="7" class="empty">No expenses</td></tr>';
+}
+
+function showAddExpenseModal() {
+  const today = new Date();
+  const defMonth = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  openModal('Add Monthly Expense', `
+    <div class="grid-2"><div class="field"><label>Category *</label><select id="ecat">
+      ${Object.keys(EXP_ICONS).map(c=>`<option value="${c}">${EXP_ICONS[c]} ${c.replace(/_/g,' ')}</option>`).join('')}
+    </select></div><div class="field"><label>Month *</label><input id="emon" type="month" value="${defMonth}"></div></div>
+    <div class="field"><label>Title *</label><input id="etitle" placeholder="e.g. Water tanker — April supply"></div>
+    <div class="grid-2"><div class="field"><label>Amount (₹) *</label><input id="eamt" type="number" placeholder="5000" min="0"></div>
+    <div class="field"><label>Payment Mode</label><select id="emode"><option>CASH</option><option>CHEQUE</option><option>ONLINE</option><option>UPI</option></select></div></div>
+    <div class="grid-2"><div class="field"><label>Vendor / Payee</label><input id="evend" placeholder="e.g. Municipal Corp"></div>
+    <div class="field"><label>Invoice Number</label><input id="einv" placeholder="INV-2026-001"></div></div>
+    <div class="field"><label>Notes</label><textarea id="enotes" rows="2" placeholder="Any additional details..."></textarea></div>
+    <button class="btn primary" style="width:100%;margin-top:6px" onclick="submitExpense()">Save Expense</button>`);
+}
+
+async function submitExpense() {
+  const title = document.getElementById('etitle')?.value?.trim();
+  const amt   = +document.getElementById('eamt')?.value;
+  if(!title){toast('Title required','error');return;}
+  if(!amt||amt<=0){toast('Enter a valid amount','error');return;}
+  const mon = document.getElementById('emon')?.value;
+  try {
+    await POST('/expenses',{
+      society_id:SOCIETY_ID, category:document.getElementById('ecat')?.value,
+      title, amount:amt, expense_month:mon?mon+'-01':undefined,
+      payment_mode:document.getElementById('emode')?.value,
+      vendor:document.getElementById('evend')?.value,
+      invoice_number:document.getElementById('einv')?.value,
+      notes:document.getElementById('enotes')?.value,
+    });
+    toast('Expense saved!'); closeModal(); loadExpenses();
+  } catch(e){toast(e.message,'error');}
+}
+
+async function deleteExpense(id) {
+  if(!confirm('Delete this expense entry?'))return;
+  try { await api('DELETE','/expenses/'+id); toast('Deleted'); loadExpenses(); }
+  catch(e){toast(e.message,'error');}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI CHATBOT  (powered by Claude via Anthropic API)
+// ═══════════════════════════════════════════════════════════════════════════════
+let chatOpen   = false;
+let chatHistory= [];
+let chatInited = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  const panel = document.getElementById('chat-panel');
+  panel.classList.toggle('open', chatOpen);
+  if(chatOpen && !chatInited) initChat();
+  if(chatOpen) { setTimeout(()=>document.getElementById('chat-inp')?.focus(),100); }
+}
+
+function initChat() {
+  chatInited = true;
+  const ms = document.getElementById('chat-messages');
+  const role = ({SUPER_ADMIN:'Super Admin',SOCIETY_ADMIN:'Society Admin',OWNER:'Flat Owner',TENANT:'Tenant',GUARD:'Security Guard'})[ROLE]||ROLE;
+  appendMsg(`Hi ${ME?.name?.split(' ')[0]||'there'}! 👋 I'm your SocietyPro assistant.\n\nYou're logged in as **${role}**. I can help you with:\n• How to use any feature\n• Understanding your plan & billing\n• Society management questions\n• Service booking & maintenance\n\nWhat would you like to know?`, 'bot');
+}
+
+function appendMsg(text, type) {
+  const ms = document.getElementById('chat-messages');
+  if(!ms) return;
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  // Simple markdown: **bold** and newlines
+  div.innerHTML = text.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+  ms.appendChild(div);
+  ms.scrollTop = ms.scrollHeight;
+  return div;
+}
+
+function sendChat() {
+  const inp = document.getElementById('chat-inp');
+  const q   = inp?.value?.trim();
+  if(!q) return;
+  inp.value = '';
+  document.getElementById('chat-sugs').style.display='none';
+  askBot(q);
+}
+
+async function askBot(question) {
+  appendMsg(question, 'user');
+  chatHistory.push({role:'user', content:question});
+  const typingDiv = appendMsg('Thinking...', 'typing');
+
+  try {
+    // Build context-aware system prompt
+    const plan = _CURRENT_PLAN?.current_plan || 'UNKNOWN';
+    const flatInfo = ME?.flat ? `Flat ${ME.flat.flat_number} in ${ME.flat.wing_name}` : 'not assigned';
+    const systemPrompt = `You are SocietyPro Assistant, a helpful AI embedded in a society management application.
+
+CURRENT USER CONTEXT:
+- Name: ${ME?.name||'User'}
+- Role: ${ROLE} (${({SUPER_ADMIN:'full platform access',SOCIETY_ADMIN:'manage one society',OWNER:'flat owner',TENANT:'tenant',GUARD:'security guard'})[ROLE]||''})
+- Society ID: ${SOCIETY_ID}
+- Plan: ${plan} (${plan==='PAID'?'full features including payments, maintenance, service directory':'basic features only — payments & maintenance require upgrade to PAID'})
+- Flat: ${flatInfo}
+
+APP FEATURES BY ROLE:
+SUPER_ADMIN: Platform overview, manage all societies & users, approve service providers, block users, instant plan changes
+SOCIETY_ADMIN: Dashboard, Flats & residents, Maintenance bills, Monthly expenses, Bank account, Visitors, Guards, Feedback, Announcements, Service directory, Plan management
+OWNER/TENANT: View my flat, Pay maintenance (PAID plan), My visitors, Book services (PAID), Complaints, Notices  
+GUARD: Visitor dashboard, Log visitors, Approve/reject entry
+
+PLAN GATES (only on PAID plan):
+- Maintenance billing & generation
+- Online payment collection (credit card, UPI)
+- Bank account management
+- Service provider directory & booking
+- Monthly expense tracking
+
+HOW TO USE KEY FEATURES:
+- Pay Maintenance: Go to Pay Maintenance → Choose Monthly/Yearly → Choose Card or UPI → Confirm
+- Approve Visitor: Go to Visitors → find pending visitor → click Approve/Reject
+- Book Service: Go to Book a Service → filter by category → click Book Appointment
+- Add Expense: Go to Monthly Expenses → click + Add Expense → fill category, amount, month
+- Upgrade Plan: Go to My Plan → Request Upgrade → Review → Approve (2-step, admin only)
+- Generate Bills: Go to Maintenance → click Generate Bills → bills created for all occupied flats
+- Add Guard: Go to Guard Roster → + Add Guard → fill mobile, name, shift, gate
+
+Be helpful, concise, and friendly. Answer in 2-4 sentences max unless a step-by-step is needed. If the user asks about a PAID feature but they're on FREE, explain they need to upgrade and how.`;
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
+      body: JSON.stringify({ messages: chatHistory.slice(-8), system: systemPrompt })
+    });
+
+    let answer;
+    if (response.ok) {
+      const d = await response.json();
+      answer = d.data?.reply || d.data?.message || 'I could not get a response. Please try again.';
+    } else {
+      // Fallback: answer from rules-based logic
+      answer = ruleBasedAnswer(question);
+    }
+
+    typingDiv?.remove();
+    appendMsg(answer, 'bot');
+    chatHistory.push({role:'assistant', content:answer});
+
+  } catch(e) {
+    typingDiv?.remove();
+    appendMsg(ruleBasedAnswer(question), 'bot');
+  }
+}
+
+function ruleBasedAnswer(q) {
+  const lq = q.toLowerCase();
+  if(lq.includes('pay') && lq.includes('maintenance'))
+    return 'To pay maintenance: go to **Pay Maintenance** in the left menu → choose Monthly or Yearly plan → select Credit Card or UPI → confirm. Monthly: ₹3,500 + 1.5% fee. Yearly gets 10% discount. Requires PAID plan.';
+  if(lq.includes('visitor') && (lq.includes('approv')||lq.includes('allow')))
+    return 'To approve a visitor: go to **Visitors** → find the pending entry (shown with ⚠️) → click **Approve**. The guard will be notified and the visitor allowed entry. Owners can also approve visitors for their own flat.';
+  if(lq.includes('upgrade') || lq.includes('pro') || lq.includes('plan'))
+    return 'To upgrade to PRO: go to **My Plan** in the left menu → click **Request Upgrade to PRO** → then click **Approve & Activate**. The 2-step process ensures no accidental upgrades. PRO unlocks maintenance, payments, service directory, and more.';
+  if(lq.includes('expense'))
+    return 'To add a monthly expense: go to **Monthly Expenses** → click **+ Add Expense** → choose category (Water, Electricity, Lift AMC, etc.), enter the amount, vendor, and month. Society Admin can track all recurring society expenses here.';
+  if(lq.includes('service') || lq.includes('plumber') || lq.includes('electrician'))
+    return 'To book a service: go to **Book a Service** → browse providers by category (Electrician, Plumber, Carpenter, etc.) → click **Book Appointment** → fill preferred date & time. Requires PAID plan. Your society admin will confirm the schedule.';
+  if(lq.includes('bill') || lq.includes('generat'))
+    return 'To generate monthly bills: go to **Maintenance** → click **Generate Bills**. Bills are created for all occupied flats based on their monthly maintenance amount. You can also apply penalties to overdue bills.';
+  if(lq.includes('guard') || lq.includes('security'))
+    return 'Guards can log visitors, approve/reject entry, and view today\'s entries from their **Guard Dashboard**. Admins can manage the guard roster under **Guard Roster** → + Add Guard.';
+  if(lq.includes('bank'))
+    return 'To link a bank account: go to **Bank Account** → enter account holder name, account number (twice for verification), and IFSC code. All maintenance payments are settled to this account. Requires PAID plan.';
+  if(lq.includes('free') || lq.includes('feature'))
+    return `**FREE plan includes:** Flat management, visitor logs, announcements, complaints, guard management.\n\n**PAID plan adds:** Maintenance billing, online payments, bank account, service directory & booking, monthly expense tracking, and all future premium features.`;
+  return 'I\'m here to help with SocietyPro! Ask me about paying maintenance, visitor approval, booking services, managing expenses, upgrading your plan, or any other feature. What would you like to know?';
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+if(TOKEN){
+  GET('/auth/me').then(r=>{ ME=r.data; ROLE=ME.role;
+    if(ME.societies?.length>0){ SOCIETY_ID=ME.societies[0].id; localStorage.setItem('sp_sid',SOCIETY_ID); }
+    else if(ME.flat){ SOCIETY_ID=ME.flat.society_id; localStorage.setItem('sp_sid',SOCIETY_ID); }
+    else if(ME.guard_info){ SOCIETY_ID=ME.guard_info.society_id; localStorage.setItem('sp_sid',SOCIETY_ID); }
+    startApp();
+  }).catch(()=>{ localStorage.removeItem('sp_token'); TOKEN=null; });
+}
+</script>
+<!-- ── AI Chatbot Widget ────────────────────────────────────────────── -->
+<button id="chat-fab" onclick="toggleChat()" title="Ask SocietyPro Assistant">🤖<span class="chat-badge" id="chat-badge"></span></button>
+
+<div id="chat-panel">
+  <div class="chat-header">
+    <div class="chat-avatar">🤖</div>
+    <div><div class="chat-title">SocietyPro Assistant</div><div class="chat-sub">Ask me anything about your society</div></div>
+    <button class="chat-close" onclick="toggleChat()">×</button>
+  </div>
+  <div id="chat-messages"></div>
+  <div class="chat-suggestions" id="chat-sugs">
+    <span class="chat-sug" onclick="askBot(this.textContent)">How do I pay maintenance?</span>
+    <span class="chat-sug" onclick="askBot(this.textContent)">How to approve a visitor?</span>
+    <span class="chat-sug" onclick="askBot(this.textContent)">How to book a plumber?</span>
+    <span class="chat-sug" onclick="askBot(this.textContent)">What features are on Free plan?</span>
+  </div>
+  <div class="chat-footer">
+    <input id="chat-inp" placeholder="Type your question..." maxlength="400"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}">
+    <button onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+</body>
+</html>
+HTMLEOF
