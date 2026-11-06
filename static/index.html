@@ -413,8 +413,10 @@ function otpInput(el,idx) {
 }
 
 async function doSendOtp() {
-  const mobile=document.getElementById('mob-inp').value.replace(/\D/g,'');
+  const inp = document.getElementById('mob-inp');
+  const mobile = inp ? inp.value.replace(/\D/g,'') : '';
   if(mobile.length<10){toast('Enter valid 10-digit mobile','error');return;}
+  buildOtpBoxes();
   try {
     const r=await POST('/auth/send-otp',{mobile});
     document.getElementById('mob-show').textContent=mobile;
@@ -425,7 +427,8 @@ async function doSendOtp() {
       b.innerHTML=`🔑 Dev OTP: <b>${r.data.dev_otp}</b>`;
       r.data.dev_otp.split('').forEach((c,i)=>{const el=document.getElementById('o'+i);if(el)el.value=c;});
     }
-    document.getElementById('o0').focus();
+    const o0 = document.getElementById('o0');
+    if(o0) o0.focus();
   } catch(e){toast(e.message,'error');}
 }
 
@@ -453,6 +456,11 @@ function logout() {
   localStorage.removeItem('sp_token'); localStorage.removeItem('sp_sid');
   TOKEN=null; ME=null; location.reload();
 }
+
+window.doSendOtp = doSendOtp; 
+window.doVerifyOtp = doVerifyOtp;
+window.showMobileStep = showMobileStep;
+window.logout = logout; 
 
 // ── App Start ─────────────────────────────────────────────────────────────────
 async function startApp() {
@@ -516,6 +524,7 @@ const NAV_CONFIG = {
 const PAGE_LOADER = {
   plan:             loadPlanPage,
   expenses:         loadExpenses,
+  services:         ()=>guardedLoad('service_directory','Service Directory',loadServices),
   serviceReqs:      ()=>guardedLoad('service_requests','Service Requests',loadServiceRequests),
   ownerServices:    ()=>guardedLoad('service_directory','Service Directory',loadServices),
   ownerServiceReqs: ()=>guardedLoad('service_requests','Service Bookings',()=>loadServiceRequests('owner')),
@@ -1341,7 +1350,6 @@ async function addTenant(fid){ const m=document.getElementById('tm').value.repla
 async function loadMaintenance() {
   setTitle('Maintenance');
   setActions(`<button class="btn sm" onclick="genBills()">Generate Bills</button><button class="btn sm danger" onclick="applyPenalties()">Apply Penalties</button>`);
-  const month=date.today().replace(day=1).isoformat; // will use JS
   const today=new Date(); const m=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
   try {
     const r=await GET(`/maintenance/bills?society_id=${SOCIETY_ID}&month=${m}&page=1`);
@@ -2116,4 +2124,3 @@ if(TOKEN){
 
 </body>
 </html>
-HTMLEOF

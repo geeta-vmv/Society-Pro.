@@ -3,7 +3,7 @@ SocietyPro Backend  –  Complete RBAC implementation
 Roles: SOCIETY_ADMIN | OWNER | TENANT | GUARD
 Deps : flask, PyJWT, PyYAML  (all available by default in image)
 """
-import os, re, time, random, string, sqlite3, logging
+import os, re, time, random, secrets, string, sqlite3, logging
 from datetime import datetime, timedelta, date
 from functools import wraps
 from decimal import Decimal
@@ -12,9 +12,8 @@ from flask import Flask, request, jsonify, g, send_from_directory
 import jwt as pyjwt
 import yaml
 
-logging.basicConfig(level=logging.INFO, format="%(asctime) (levelname)s %(message)")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger("societypro")
-
 _HERE     = os.path.dirname(os.path.abspath(__file__))
 _CFG_PATH = os.environ.get("CONFIG_PATH", os.path.join(_HERE, "..", "config.yaml"))
 
@@ -61,36 +60,60 @@ def r2l(rows): return [dict(r) for r in (rows or [])]
 
 # ── OTP store ──────────────────────────────────────────────────────────────────
 _OTP = {}
-def otp_set(m,o): _OTP[m]={"otp":o,"exp":time.time()+CFG["otp"]["expiry_minutes"]*60}
+def otp_set(m,o):
+    _OTP[m] = {
+        "otp": o,
+        "exp": time.time() + CFG.get("otp",{}).get("expiry_minutes", 5) * 60,
+        "attempts": 0,
+        "sent_at": time.time()
+    }
 def otp_get(m):
-    r=_OTP.get(m); return r["otp"] if r and time.time()<r["exp"] else None
-def otp_del(m): _OTP.pop(m,None)
-def gen_otp(): return "".join(random.choices(string.digits,k=CFG["otp"]["length"]))
+    r = _OTP.get(m)
+    return r["otp"] if r and time.time() < r["exp"] else None
+def otp_del(m): _OTP.pop(m, None)
+def gen_otp():
+    length = int(CFG.get("otp", {}).get("length", 6))
+    return "".join(secrets.choice(string.digits) for _ in range(length))
 def gen_receipt(sid):
-    return f"RCP-{sid}-{datetime.now().strftime('%Y%m%d')}-{''.join(random.choices(string.digits,k=6))}"
+    return f"RCP-{sid}-{datetime.now().strftime('%Y%m%d')}-{''.join(secrets.choice(string.digits) for _ in range(6))}"
 
 def send_otp_sms(mobile, otp):
-    log.info(f"\n{'='*52}\n  📱  OTP for {mobile}:  {otp}\n{'='*52}")
-    if CFG["otp"]["provider"] == "msg91":
+    provider = CFG.get("otp", {}).get("provider", "console")
+    if CFG.get("app", {}).get("debug", False) or provider == "console":
+        log.info(f"📱 OTP for {mobile}: {otp}")
+        return True, "OTP logged to console"
+    if provider == "msg91":
+        auth_key = CFG.get("otp", {}).get("msg91", {}).get("auth_key")
+        if not auth_key:
+            return False, "MSG91 auth key is not configured"
         try:
             import urllib.request, urllib.parse
             data = urllib.parse.urlencode({
-                "authkey": CFG["otp"]["msg91"]["auth_key"],
+                "authkey": auth_key,
                 "mobiles": f"91{mobile}", "message": f"SocietyPro OTP: {otp}. Valid 5 min.",
-                "sender": "SCPRO", "route": "4"}).encode()
+                "sender": CFG.get("otp", {}).get("msg91", {}).get("sender_id", "SCPRO"),
+                "route": CFG.get("otp", {}).get("msg91", {}).get("route", "4")}).encode()
             urllib.request.urlopen("https://api.msg91.com/api/sendhttp.php", data, timeout=5)
-        except Exception as e: log.warning(f"MSG91: {e}")
-    elif CFG["otp"]["provider"] == "fast2sms":
+            return True, "SMS sent via MSG91"
+        except Exception as e:
+            log.warning(f"MSG91 failure: {e}")
+            return False, f"MSG91 delivery failure: {e}"
+    elif provider == "fast2sms":
+        api_key = CFG.get("otp", {}).get("fast2sms", {}).get("api_key")
+        if not api_key:
+            return False, "Fast2SMS API key is not configured"
         try:
-            import urllib.request
+            import urllib.request, json
             req = urllib.request.Request(
                 "https://www.fast2sms.com/dev/bulkV2",
-                headers={"authorization": CFG["otp"]["fast2sms"]["api_key"],
-                         "Content-Type": "application/json"})
-            import json
+                headers={"authorization": api_key, "Content-Type": "application/json"})
             data = json.dumps({"route":"q","message":f"SocietyPro OTP: {otp}","language":"english","flash":0,"numbers":mobile}).encode()
             urllib.request.urlopen(req, data, timeout=5)
-        except Exception as e: log.warning(f"fast2sms: {e}")
+            return True, "SMS sent via Fast2SMS"
+        except Exception as e:
+            log.warning(f"fast2sms: {e}")
+            return False, f"Fast2SMS delivery failure: {e}"
+    return True, "OTP sent"
 
 # ── JWT ────────────────────────────────────────────────────────────────────────
 SECRET  = CFG["app"]["secret_key"]
@@ -98,7 +121,7 @@ JWT_EXP = CFG["jwt"]["access_token_expiry_hours"]
 
 def make_token(uid, role):
     return pyjwt.encode(
-        {"sub": uid, "role": role, "exp": datetime.utcnow() + timedelta(hours=JWT_EXP)},
+        {"sub": str(uid), "role": role, "exp": datetime.utcnow() + timedelta(hours=JWT_EXP)},
         SECRET, algorithm="HS256")
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -187,7 +210,8 @@ def auth_required(f):
         if not h.startswith("Bearer "): return err("Missing token", 401)
         try:
             p = pyjwt.decode(h[7:], SECRET, algorithms=["HS256"])
-            g.uid = p["sub"]; g.role = p["role"]
+            g.uid = int(p["sub"]) if str(p["sub"]).isdigit() else p["sub"]
+            g.role = p["role"]
         except pyjwt.ExpiredSignatureError: return err("Token expired", 401)
         except Exception: return err("Invalid token", 401)
         return f(*a, **kw)
@@ -292,18 +316,50 @@ def send_otp_route():
     d = request.json or {}
     mobile = re.sub(r"\D", "", str(d.get("mobile", "")))
     if len(mobile) < 10: return err("Enter a valid 10-digit mobile number")
+
+    # Rate limit check (30s cooldown between OTP requests for same mobile)
+    existing = _OTP.get(mobile)
+    now = time.time()
+    if existing and (now - existing.get("sent_at", 0)) < 30:
+        remaining = int(30 - (now - existing["sent_at"]))
+        return err(f"Please wait {remaining}s before requesting a new OTP", 429)
+
     otp = gen_otp()
     otp_set(mobile, otp)
-    send_otp_sms(mobile, otp)
-    return ok({"message": "OTP sent", "dev_otp": otp})   # dev_otp for testing
+    success, msg = send_otp_sms(mobile, otp)
+    if not success and CFG.get("otp", {}).get("provider") != "console":
+        return err(f"Failed to deliver OTP: {msg}", 502)
+
+    resp_data = {"message": "OTP sent"}
+    # In development or console mode, provide dev_otp for automated testing and demo convenience
+    if CFG.get("app", {}).get("debug") or CFG.get("otp", {}).get("provider") == "console":
+        resp_data["dev_otp"] = otp
+    return ok(resp_data)
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
 def verify_otp():
     d = request.json or {}
     mobile = re.sub(r"\D", "", str(d.get("mobile", "")))
     otp    = str(d.get("otp", "")).strip()
-    stored = otp_get(mobile)
-    if not stored or stored != otp: return err("Invalid or expired OTP")
+
+    record = _OTP.get(mobile)
+    if not record or time.time() > record["exp"]:
+        _OTP.pop(mobile, None)
+        return err("OTP has expired or is invalid. Please request a new one.")
+
+    max_att = int(CFG.get("otp", {}).get("max_attempts", 3))
+    record["attempts"] = record.get("attempts", 0) + 1
+    if record["attempts"] > max_att:
+        _OTP.pop(mobile, None)
+        return err("Maximum verification attempts exceeded. Please request a new OTP.", 429)
+
+    if record["otp"] != otp:
+        remaining = max_att - record["attempts"]
+        if remaining <= 0:
+            _OTP.pop(mobile, None)
+            return err("Incorrect OTP. Maximum attempts exceeded. Please request a new OTP.", 400)
+        return err(f"Invalid OTP. {remaining} attempt(s) remaining.", 400)
+
     otp_del(mobile)
     user = qone("SELECT * FROM users WHERE mobile=?", (mobile,))
     if not user:
@@ -717,21 +773,41 @@ def confirm_payment():
 
 @app.route("/api/payments/history", methods=["GET"])
 @auth_required
-@plan_required("payment_history")
 def payment_history():
-    page = int(request.args.get("page",1))
-    if g.role in ("OWNER","TENANT"):
+    page = int(request.args.get("page", 1))
+    fid = request.args.get("flat_id", type=int)
+    sid = request.args.get("society_id", type=int)
+
+    if g.role in ("OWNER", "TENANT"):
         flat = _get_user_flat(g.uid)
-        if not flat: return ok([])
-        rows = r2l(qall("SELECT p.*,f.flat_number FROM payments p LEFT JOIN flats f ON f.id=p.flat_id WHERE p.flat_id=? ORDER BY p.created_at DESC",(flat["id"],)))
-    else:
-        sid = int(request.args.get("society_id",1))
-        fid = request.args.get("flat_id",type=int)
-        sql = "SELECT p.*,f.flat_number FROM payments p LEFT JOIN flats f ON f.id=p.flat_id WHERE p.society_id=?"
-        params=[sid]
-        if fid: sql+=" AND p.flat_id=?"; params.append(fid)
-        sql+=" ORDER BY p.created_at DESC"
-        rows = r2l(qall(sql,params))
+        if not flat:
+            return ok([], meta={"page": 1, "total": 0, "pages": 1, "limit": 20})
+        rows = r2l(qall(
+            "SELECT p.*, f.flat_number FROM payments p "
+            "LEFT JOIN flats f ON f.id=p.flat_id "
+            "WHERE p.flat_id=? ORDER BY p.created_at DESC", (flat["id"],)))
+    elif g.role == "SUPER_ADMIN":
+        sql = "SELECT p.*, f.flat_number FROM payments p LEFT JOIN flats f ON f.id=p.flat_id WHERE 1=1"
+        params = []
+        if sid:
+            sql += " AND p.society_id=?"
+            params.append(sid)
+        if fid:
+            sql += " AND p.flat_id=?"
+            params.append(fid)
+        sql += " ORDER BY p.created_at DESC"
+        rows = r2l(qall(sql, params))
+    else:  # SOCIETY_ADMIN or GUARD
+        admin_sid = _get_user_society(g.uid)
+        target_sid = sid if (sid and sid == admin_sid) else admin_sid
+        sql = "SELECT p.*, f.flat_number FROM payments p LEFT JOIN flats f ON f.id=p.flat_id WHERE p.society_id=?"
+        params = [target_sid]
+        if fid:
+            sql += " AND p.flat_id=?"
+            params.append(fid)
+        sql += " ORDER BY p.created_at DESC"
+        rows = r2l(qall(sql, params))
+
     items, meta = paginate(rows, page, 20)
     return ok(items, meta=meta)
 
@@ -1740,7 +1816,7 @@ def init_db():
         s=s.strip()
         if s: db.execute(s)
     db.commit(); seed(db); db.close()
-    log.info("✅  DB ready → %", DB_PATH)
+    log.info("✅  DB ready → %s", DB_PATH)
 
 if __name__ == "__main__":
     os.makedirs(STATIC, exist_ok=True)
@@ -1753,7 +1829,6 @@ if __name__ == "__main__":
         "\n  9999000001  Rajesh Agarwal  SOCIETY_ADMIN"+
         "\n  9999000002  Suresh Mehta    OWNER  (Flat A-101)"+
         "\n  9999000003  Priya Sharma    OWNER  (Flat A-201)"+
-        "\n  9999000006  Ravi Kumar      TENANT (Flat A-201)"+
         "\n  9999000007  Sunita Rao      TENANT (Flat B-301)"+
         "\n  9999000008  Ramesh Yadav    GUARD  (Main Gate)"+
         "\n"+"="*56)
